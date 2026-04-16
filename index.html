@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_7.html -->
+<!-- saved from url=(0060)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_8.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -572,13 +572,21 @@ document.getElementById('filterType').addEventListener('change',applyFilters);
 document.getElementById('filterRapport').addEventListener('change',applyFilters);
 
 // ============================================================
-// INIT — charge WOC puis rapports
+// INIT — charge WOC puis rapports puis charts
 // ============================================================
-loadWOC().then(() => loadRapports());
+async function init() {
+  await loadWOC();
+  renderCharts();
+  await loadRapports();
+}
+
+init();
 
 // Auto-refresh toutes les 5 minutes
-setInterval(() => {
-  loadWOC().then(() => loadRapports());
+setInterval(async () => {
+  await loadWOC();
+  renderCharts();
+  await loadRapports();
 }, 5 * 60 * 1000);
 
 
@@ -720,12 +728,7 @@ function renderCharts() {
   });
 }
 
-// Hook into loadWOC to render charts after data loads
-const _origLoadWOC = loadWOC;
-loadWOC = async function() {
-  await _origLoadWOC();
-  renderCharts();
-};
+// Charts are rendered after loadWOC completes - handled in init
 </script>
 
 </body></html>
