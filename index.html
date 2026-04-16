@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///C:/Users/y.hamouda/Downloads/index_3.html -->
+<!-- saved from url=(0059)file:///C:/Users/y.hamouda/Downloads/index_fixed_dates.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -677,13 +677,41 @@ function renderCharts() {
   // 5. Évolution mensuelle
   const monthNames = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
 
-  // Fonction robuste pour extraire {year, month} depuis une date en string quelconque
+  // Fonction robuste pour extraire {year, month} depuis une date française ou semaine
   function parseMonthYear(dateStr) {
     if (!dateStr) return null;
     const s = dateStr.toString().trim();
     if (!s || s === '—' || s === '-' || s.startsWith('#')) return null;
 
-    // Format DD/MM/YYYY ou D/M/YYYY (français)
+    // Format semaine SXX (S03, S04, etc.) → convertir en mois approximatif
+    const weekMatch = s.match(/^S(\d{1,2})$/i);
+    if (weekMatch) {
+      const week = parseInt(weekMatch[1]);
+      if (week >= 1 && week <= 52) {
+        // Conversion semaine → mois approximatif (4.33 semaines par mois)
+        const month = Math.min(12, Math.max(1, Math.ceil(week / 4.33)));
+        return { year: 2026, month }; // Assume 2026 pour les semaines
+      }
+    }
+
+    // Format français DD-MMM. (23-déc., 15-févr., etc.)
+    const frenchMonths = {
+      'janv': 1, 'févr': 2, 'mars': 3, 'avr': 4, 'mai': 5, 'juin': 6,
+      'juil': 7, 'août': 8, 'sept': 9, 'oct': 10, 'nov': 11, 'déc': 12
+    };
+    const frenchMatch = s.match(/^(\d{1,2})-([a-zéàèù]+)\.?$/i);
+    if (frenchMatch) {
+      const day = parseInt(frenchMatch[1]);
+      const monthStr = frenchMatch[2].toLowerCase();
+      const month = frenchMonths[monthStr];
+      if (month) {
+        // Déterminer l'année: si mois >= 10, probablement 2025, sinon 2026
+        const year = (month >= 10) ? 2025 : 2026;
+        return { year, month };
+      }
+    }
+
+    // Format DD/MM/YYYY ou D/M/YYYY (standard français)
     let m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
     if (m) {
       const month = parseInt(m[2]);
