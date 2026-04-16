@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<!-- saved from url=(0060)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_6.html -->
+<html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CELLNEX — WOC Correctifs 2026</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#222535;--border:#2e3249;--text:#e8eaf0;--text-muted:#7b8199;--accent:#4f7ef8;--accent-glow:rgba(79,126,248,0.15);--ok:#22c55e;--ok-bg:rgba(34,197,94,0.12);--raf:#f59e0b;--raf-bg:rgba(245,158,11,0.12);--nok:#ef4444;--nok-bg:rgba(239,68,68,0.12);--acces:#818cf8;--maintenance:#34d399}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:13px;min-height:100vh;overflow-x:hidden}
+.header{background:linear-gradient(135deg,#141726 0%,#1c2040 100%);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:14px}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,#4f7ef8,#818cf8);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0}
+.logo-text h1{font-size:15px;font-weight:700}
+.logo-text p{font-size:11px;color:var(--text-muted);margin-top:1px}
+.header-right{display:flex;gap:20px;align-items:center}
+.kpi-mini{text-align:center}
+.kpi-mini .val{font-size:19px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.kpi-mini .lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+.kpi-mini.ok .val{color:var(--ok)}.kpi-mini.raf .val{color:var(--raf)}.kpi-mini.nok .val{color:var(--nok)}.kpi-mini.total .val{color:var(--accent)}
+.container{padding:18px 28px;max-width:1700px;margin:0 auto}
+.filter-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.search-wrap{position:relative;flex:1;min-width:240px}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none}
+.search-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px 8px 34px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s}
+.search-input:focus{border-color:var(--accent)}.search-input::placeholder{color:var(--text-muted)}
+select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-size:12px;font-family:'Inter',sans-serif;outline:none;cursor:pointer}
+select:focus{border-color:var(--accent)}select option{background:var(--surface2)}
+.filter-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 13px;color:var(--text-muted);font-size:12px;font-family:'Inter',sans-serif;cursor:pointer;transition:all .2s}
+.filter-btn:hover{background:var(--accent-glow);border-color:var(--accent);color:var(--accent)}
+.results-count{font-size:12px;color:var(--text-muted);margin-left:auto;font-family:'JetBrains Mono',monospace;white-space:nowrap}
+.sync-status{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--surface2);border-bottom:1px solid var(--border)}
+th{padding:10px 13px;text-align:left;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;cursor:pointer;user-select:none;white-space:nowrap;transition:color .15s}
+th:hover{color:var(--text)}.th-arrow{opacity:.4;font-size:10px;margin-left:3px}
+th.sorted .th-arrow{opacity:1;color:var(--accent)}
+tbody tr{border-bottom:1px solid rgba(46,50,73,.5);cursor:pointer;transition:background .12s}
+tbody tr:hover{background:var(--accent-glow)}tbody tr:last-child{border-bottom:none}
+td{padding:9px 13px;vertical-align:middle}
+.woc-id{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);font-weight:500}
+.code-fr{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:500;white-space:nowrap}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%}
+.badge-ok{background:var(--ok-bg);color:var(--ok)}.badge-ok::before{background:var(--ok)}
+.badge-raf{background:var(--raf-bg);color:var(--raf)}.badge-raf::before{background:var(--raf)}
+.badge-nok{background:var(--nok-bg);color:var(--nok)}.badge-nok::before{background:var(--nok)}
+.badge-acces{background:rgba(129,140,248,.12);color:var(--acces)}
+.badge-maintenance{background:rgba(52,211,153,.12);color:var(--maintenance)}
+.interv-cell{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted);font-size:12px}
+.muted-cell{color:var(--text-muted);font-size:12px}
+.date-cell{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);white-space:nowrap}
+.montant-cell{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;white-space:nowrap;text-align:right}
+.has-val{color:var(--text)}.no-val{color:var(--text-muted)}
+.pdf-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;background:rgba(34,197,94,.12);color:var(--ok);border:1px solid rgba(34,197,94,.25);text-decoration:none;transition:all .15s;white-space:nowrap}
+.pdf-btn:hover{background:rgba(34,197,94,.22);border-color:var(--ok)}
+.no-rapport{font-size:11px;color:var(--text-muted);opacity:.5}
+.empty-state{text-align:center;padding:60px;color:var(--text-muted)}
+.empty-state .icon{font-size:40px;margin-bottom:14px;opacity:.4}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:700px;max-height:88vh;overflow-y:auto;animation:slideUp .2s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.modal-header{padding:20px 22px 15px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.modal-woc{font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:700;color:var(--accent)}
+.modal-sub{font-size:12px;color:var(--text-muted);margin-top:3px}
+.close-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);font-size:15px;flex-shrink:0;transition:all .15s}
+.close-btn:hover{background:var(--nok-bg);color:var(--nok);border-color:var(--nok)}
+.modal-body{padding:18px 22px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.mfield{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px 13px}
+.mfield.full{grid-column:1/-1}
+.flabel{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted);margin-bottom:4px}
+.fval{font-size:13px;color:var(--text);line-height:1.5;word-break:break-word}
+.fval.mono{font-family:'JetBrains Mono',monospace;font-size:12px}
+.fval.accent{color:var(--accent);font-weight:600}.fval.ok{color:var(--ok);font-weight:500}.fval.raf{color:var(--raf);font-weight:500}.fval.nok{color:var(--nok);font-weight:500}.fval.muted{color:var(--text-muted)}
+.rapport-block{margin-top:14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.rapport-block-info{font-size:12px;color:var(--ok)}
+.rapport-block-info strong{display:block;font-size:13px;margin-bottom:2px}
+.rapport-block a{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;background:var(--ok);color:#fff;text-decoration:none;transition:opacity .15s;white-space:nowrap}
+.rapport-block a:hover{opacity:.85}
+.no-rapport-block{margin-top:14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-size:12px;color:var(--text-muted);text-align:center}
+.pagination{display:flex;align-items:center;justify-content:center;gap:5px;padding:14px;border-top:1px solid var(--border);flex-wrap:wrap}
+.page-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text-muted);font-size:12px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .15s}
+.page-btn:hover{background:var(--accent-glow);border-color:var(--accent);color:var(--accent)}.page-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}.page-btn:disabled{opacity:.3;cursor:not-allowed}
+.page-info{font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:#444a6a}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">CX</div>
+    <div class="logo-text">
+      <h1>CELLNEX — Work Orders Correctifs</h1>
+      <p>Interface de consultation · Mise à jour automatique</p>
+    </div>
+  </div>
+  <div class="header-right" id="kpis">
+    <div style="font-size:12px;color:var(--text-muted)">Chargement...</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="filter-bar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="searchInput" placeholder="Rechercher par WOC, site, ville, intervention…">
+    </div>
+    <select id="filterStatut">
+      <option value="">Tous statuts</option>
+      <option value="OK">✅ OK</option>
+      <option value="RAF">⏳ RAF</option>
+      <option value="NOK">❌ NOK</option>
+    </select>
+    <select id="filterTeam">
+      <option value="">Toutes équipes</option>
+      <option value="Accès">🔑 Accès</option>
+      <option value="Maintenance">🔧 Maintenance</option>
+    </select>
+    <select id="filterType">
+      <option value="">Tous types</option>
+    </select>
+    <select id="filterRapport">
+      <option value="">Tous</option>
+      <option value="oui">📄 Avec rapport</option>
+      <option value="non">⬜ Sans rapport</option>
+    </select>
+    <button class="filter-btn" onclick="resetFilters()">↺ Reset</button>
+    <div class="sync-status"><span class="sync-dot" id="syncDot" style="background: var(--nok);"></span><span id="syncLabel">Erreur chargement WOC</span></div>
+    <span class="results-count" id="resultsCount"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy(&#39;WOC&#39;)" id="th-WOC">WOC <span class="th-arrow">↕</span></th>
+          <th onclick="sortBy(&#39;Code FR&#39;)" id="th-Code FR">Code FR <span class="th-arrow">↕</span></th>
+          <th onclick="sortBy(&#39;Statut&#39;)" id="th-Statut">Statut <span class="th-arrow">↕</span></th>
+          <th onclick="sortBy(&#39;Team&#39;)" id="th-Team">Équipe <span class="th-arrow">↕</span></th>
+          <th onclick="sortBy(&#39;Nom du site&#39;)" id="th-Nom du site">Site <span class="th-arrow">↕</span></th>
+          <th onclick="sortBy(&#39;Ville&#39;)" id="th-Ville">Ville <span class="th-arrow">↕</span></th>
+          <th>Intervention</th>
+          <th onclick="sortBy(&#39;Date de création&#39;)" id="th-Date de création">Création <span class="th-arrow">↕</span></th>
+          <th onclick="sortBy(&#39;Date réalisation&#39;)" id="th-Date réalisation">Réalisation <span class="th-arrow">↕</span></th>
+          <th onclick="sortBy(&#39;Montant&#39;)" id="th-Montant" style="text-align:right">Montant <span class="th-arrow">↕</span></th>
+          <th>Rapport</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div id="emptyState" class="empty-state" style="display:none">
+      <div class="icon">🔎</div>
+      <p>Aucun résultat pour cette recherche.</p>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeOnOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-woc" id="mWoc"></div>
+        <div class="modal-sub" id="mSub"></div>
+      </div>
+      <div class="close-btn" onclick="closeModal()">✕</div>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const WOC_SHEET_ID = '188QhJUe5NyrcPpfJ8tqd9uaOgBB5qFniEy1GzqCVPEA';
+const RAP_SHEET_ID = '1v0sYI6n3yYenrKoSjp_GOpj-Ao_AURQ_HHvo2NYX1u4';
+
+let DATA = [];
+let RAPPORTS = {};
+let filtered = [];
+let page = 1;
+const PER_PAGE = 50;
+let sKey = 'Date de création';
+let sDir = -1;
+
+// ============================================================
+// LOAD WOC FROM GOOGLE SHEETS
+// ============================================================
+async function loadWOC() {
+  try {
+    document.getElementById('syncLabel').textContent = 'Chargement des WOC…';
+    const url = 'https://docs.google.com/spreadsheets/d/' + WOC_SHEET_ID + '/gviz/tq?tqx=out:json&sheet=Tableau%20de%20bord';
+    const res = await fetch(url);
+    const text = await res.text();
+    // Handle both /*O_o*/ and google.visualization.Query.setResponse() prefixes
+    let jsonStr = text;
+    if (text.startsWith('/*O_o*/')) {
+      jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+    } else {
+      jsonStr = text.substring(47, text.length - 2);
+    }
+    const json = JSON.parse(jsonStr);
+    const rows = json.table.rows;
+    
+    DATA = rows
+      .map(row => {
+        if (!row.c) return null;
+        const v = (i) => row.c[i] ? (row.c[i].v !== null ? String(row.c[i].v) : '') : '';
+    const fd = (cell) => {
+      if (!cell || cell.v === null) return '';
+      if (cell.f) return cell.f; // formatted value
+      if (typeof cell.v === 'string' && cell.v.includes('Date(')) {
+        const m = cell.v.match(/Date\((\d+),(\d+),(\d+)\)/);
+        if (m) {
+          const d = new Date(parseInt(m[1]), parseInt(m[2]), parseInt(m[3]));
+          return d.toLocaleDateString('fr-FR');
+        }
+      }
+      return String(cell.v);
+    };
+        const vf = (i) => row.c[i] ? (row.c[i].f || row.c[i].v || '') : '';
+        return {
+          'Code FR': v(0),
+          'WOC': v(1),
+          'Date de création': fd(row.c[2]),
+          'Team': v(3),
+          'Type': v(4),
+          'Observation': v(5),
+          'Intervention': v(6),
+          'Date prèv': fd(row.c[7]),
+          'Date réalisation': fd(row.c[8]),
+          'Statut': v(9),
+          'Montant': v(10),
+          ' Code Site client': v(11),
+          'Nom du site': v(12),
+          'Adresse': v(13),
+          'Ville': v(14),
+          'X': v(15),
+          'Y': v(16)
+        };
+      })
+      .filter(r => r && r['WOC'] && r['WOC'].trim() !== '' && r['WOC'] !== 'WOC');
+
+    renderKPIs();
+    buildTypeFilter();
+    sortBy('Date de création');
+    document.getElementById('syncLabel').textContent = DATA.length + ' WOC chargés';
+    document.getElementById('syncDot').style.background = 'var(--ok)';
+  } catch(e) {
+    document.getElementById('syncLabel').textContent = 'Erreur chargement WOC';
+    document.getElementById('syncDot').style.background = 'var(--nok)';
+    console.error('WOC load error:', e);
+  }
+}
+
+// ============================================================
+// LOAD RAPPORTS FROM GOOGLE SHEETS
+// ============================================================
+async function loadRapports() {
+  try {
+    const url = 'https://docs.google.com/spreadsheets/d/' + RAP_SHEET_ID + '/gviz/tq?tqx=out:json';
+    const res = await fetch(url);
+    const text = await res.text();
+    // Handle both /*O_o*/ and google.visualization.Query.setResponse() prefixes
+    let jsonStr = text;
+    if (text.startsWith('/*O_o*/')) {
+      jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+    } else {
+      jsonStr = text.substring(47, text.length - 2);
+    }
+    const json = JSON.parse(jsonStr);
+    const rows = json.table.rows;
+    rows.forEach(row => {
+      if (row.c && row.c[0] && row.c[0].v) {
+        const code_fr = row.c[0].v.toString().trim();
+        const lien_pdf = row.c[2] ? (row.c[2].v || '') : '';
+        const date = row.c[3] ? (row.c[3].f || row.c[3].v || '') : '';
+        if (lien_pdf) RAPPORTS[code_fr] = { lien_pdf, date };
+      }
+    });
+    const count = Object.keys(RAPPORTS).length;
+    document.getElementById('syncLabel').textContent = DATA.length + ' WOC · ' + count + ' rapport' + (count > 1 ? 's' : '');
+    render();
+  } catch(e) {
+    console.warn('Rapports load error:', e);
+  }
+}
+
+function rapportBtn(code_fr) {
+  if (!code_fr) return '<span class="no-rapport">—</span>';
+  const r = RAPPORTS[code_fr];
+  if (r && r.lien_pdf) {
+    return '<a class="pdf-btn" href="' + r.lien_pdf + '" target="_blank" onclick="event.stopPropagation()">📄 Rapport</a>';
+  }
+  return '<span class="no-rapport">—</span>';
+}
+
+// ============================================================
+// KPIs
+// ============================================================
+function renderKPIs() {
+  const ok = DATA.filter(r=>r.Statut==='OK').length;
+  const raf = DATA.filter(r=>r.Statut==='RAF').length;
+  const nok = DATA.filter(r=>r.Statut==='NOK').length;
+  const montant = DATA.reduce((s,r)=>s+(parseFloat(r.Montant)||0),0);
+  document.getElementById('kpis').innerHTML =
+    kpi(DATA.length,'Total WOC','total') +
+    kpi(ok,'Terminés','ok') +
+    kpi(raf,'RAF','raf') +
+    kpi(nok,'NOK','nok') +
+    '<div style="border-left:1px solid var(--border);padding-left:18px;text-align:center">' +
+    '<div style="font-size:14px;font-weight:700;font-family:JetBrains Mono,monospace">' +
+    montant.toLocaleString('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}) +
+    '</div><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">CA total</div></div>';
+}
+
+function kpi(v,l,cls){
+  return '<div class="kpi-mini '+cls+'"><div class="val">'+v+'</div><div class="lbl">'+l+'</div></div>';
+}
+
+function buildTypeFilter(){
+  const types=[...new Set(DATA.map(r=>r.Type).filter(Boolean))].sort();
+  const sel=document.getElementById('filterType');
+  sel.innerHTML='<option value="">Tous types</option>';
+  types.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});
+}
+
+// ============================================================
+// FILTERS & SORT
+// ============================================================
+function applyFilters(){
+  const q=document.getElementById('searchInput').value.toLowerCase().trim();
+  const s=document.getElementById('filterStatut').value;
+  const t=document.getElementById('filterTeam').value;
+  const ty=document.getElementById('filterType').value;
+  const rap=document.getElementById('filterRapport').value;
+  filtered=DATA.filter(r=>{
+    if(s&&r.Statut!==s)return false;
+    if(t&&r.Team!==t)return false;
+    if(ty&&r.Type!==ty)return false;
+    if(rap==='oui'&&!RAPPORTS[r['Code FR']])return false;
+    if(rap==='non'&&RAPPORTS[r['Code FR']])return false;
+    if(q){
+      const h=[r.WOC,r['Code FR'],r['Nom du site'],r.Ville,r.Intervention,r.Adresse].join(' ').toLowerCase();
+      if(!h.includes(q))return false;
+    }
+    return true;
+  });
+  filtered.sort((a,b)=>{
+    let av=a[sKey]||'',bv=b[sKey]||'';
+    if(sKey==='Montant'){av=parseFloat(av)||0;bv=parseFloat(bv)||0;}
+    if(av<bv)return sDir; if(av>bv)return -sDir; return 0;
+  });
+  page=1;
+  render();
+}
+
+function sortBy(k){
+  if(sKey===k)sDir*=-1; else{sKey=k;sDir=-1;}
+  document.querySelectorAll('th').forEach(th=>th.classList.remove('sorted'));
+  const th=document.getElementById('th-'+k);
+  if(th){th.classList.add('sorted');th.querySelector('.th-arrow').textContent=sDir===-1?'↓':'↑';}
+  applyFilters();
+}
+
+function resetFilters(){
+  document.getElementById('searchInput').value='';
+  document.getElementById('filterStatut').value='';
+  document.getElementById('filterTeam').value='';
+  document.getElementById('filterType').value='';
+  document.getElementById('filterRapport').value='';
+  applyFilters();
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function fDate(d){if(!d||d==='')return'—';if(d.includes('Date('))return'—';return d;}
+function fMontant(m){const v=parseFloat(m);if(!v)return null;return v.toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:2})+' €';}
+function trunc(s,n){if(!s)return'';return s.length>n?s.substring(0,n)+'…':s;}
+
+function sBadge(s){
+  if(s==='OK')return'<span class="badge badge-ok">OK</span>';
+  if(s==='RAF')return'<span class="badge badge-raf">RAF</span>';
+  if(s==='NOK')return'<span class="badge badge-nok">NOK</span>';
+  return s?'<span class="badge" style="background:rgba(120,120,120,.1);color:#888">'+s+'</span>':'—';
+}
+function tBadge(t){
+  if(t==='Accès')return'<span class="badge badge-acces">🔑 Accès</span>';
+  if(t==='Maintenance')return'<span class="badge badge-maintenance">🔧 Maint.</span>';
+  return t?'<span class="badge">'+t+'</span>':'—';
+}
+
+function render(){
+  const tbody=document.getElementById('tableBody');
+  const empty=document.getElementById('emptyState');
+  const total=filtered.length;
+  document.getElementById('resultsCount').textContent=total+' résultat'+(total!==1?'s':'');
+  if(total===0){tbody.innerHTML='';empty.style.display='block';document.getElementById('pagination').innerHTML='';return;}
+  empty.style.display='none';
+  const start=(page-1)*PER_PAGE;
+  const rows=filtered.slice(start,start+PER_PAGE);
+  tbody.innerHTML=rows.map((r,i)=>{
+    const m=fMontant(r.Montant);
+    return'<tr onclick="openModal('+(start+i)+')">'+
+      '<td><div class="woc-id">'+(r.WOC||'—')+'</div></td>'+
+      '<td><div class="code-fr">'+(r['Code FR']||'—')+'</div></td>'+
+      '<td>'+sBadge(r.Statut)+'</td>'+
+      '<td>'+tBadge(r.Team)+'</td>'+
+      '<td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'+(r['Nom du site']||'—')+'</td>'+
+      '<td><div class="muted-cell">'+(r.Ville||'—')+'</div></td>'+
+      '<td><div class="interv-cell">'+trunc(r.Intervention,70)+'</div></td>'+
+      '<td><div class="date-cell">'+fDate(r['Date de création'])+'</div></td>'+
+      '<td><div class="date-cell">'+fDate(r['Date réalisation'])+'</div></td>'+
+      '<td><div class="montant-cell '+(m?'has-val':'no-val')+'">'+(m||'—')+'</div></td>'+
+      '<td>'+rapportBtn(r['Code FR'])+'</td>'+
+      '</tr>';
+  }).join('');
+  renderPag(total);
+}
+
+function renderPag(total){
+  const pages=Math.ceil(total/PER_PAGE);
+  const pag=document.getElementById('pagination');
+  if(pages<=1){pag.innerHTML='';return;}
+  let h='<button class="page-btn" onclick="goPage('+(page-1)+')" '+(page===1?'disabled':'')+'>‹</button>';
+  for(let p=1;p<=pages;p++){
+    if(p===1||p===pages||(p>=page-2&&p<=page+2))
+      h+='<button class="page-btn '+(p===page?'active':'')+'" onclick="goPage('+p+')">'+p+'</button>';
+    else if(p===page-3||p===page+3) h+='<span class="page-info">…</span>';
+  }
+  h+='<button class="page-btn" onclick="goPage('+(page+1)+')" '+(page===pages?'disabled':'')+'>›</button>';
+  h+='<span class="page-info">'+(((page-1)*PER_PAGE)+1)+'–'+Math.min(page*PER_PAGE,total)+' / '+total+'</span>';
+  pag.innerHTML=h;
+}
+
+function goPage(p){
+  const pages=Math.ceil(filtered.length/PER_PAGE);
+  if(p<1||p>pages)return;
+  page=p;render();
+  document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function openModal(idx){
+  const r=filtered[idx];
+  if(!r)return;
+  document.getElementById('mWoc').textContent=r.WOC||'—';
+  document.getElementById('mSub').textContent=[r['Nom du site'],r.Ville].filter(Boolean).join(' · ')||'—';
+  const sc=r.Statut==='OK'?'ok':r.Statut==='RAF'?'raf':r.Statut==='NOK'?'nok':'';
+  const m=fMontant(r.Montant);
+  const rap=RAPPORTS[r['Code FR']];
+  const rapportHtml = rap && rap.lien_pdf
+    ? '<div class="rapport-block"><div class="rapport-block-info"><strong>📄 Rapport disponible</strong>Déposé le '+rap.date+'</div><a href="'+rap.lien_pdf+'" target="_blank">Ouvrir le PDF →</a></div>'
+    : '<div class="no-rapport-block">📭 Aucun rapport disponible pour ce WOC</div>';
+
+  document.getElementById('modalBody').innerHTML=
+    '<div class="mgrid">'+
+    mf('Code FR','<span class="fval mono accent">'+(r['Code FR']||'—')+'</span>')+
+    mf('Statut','<span class="fval '+sc+'">'+(r.Statut||'—')+'</span>')+
+    mf('Équipe',r.Team||'—')+
+    mf('Type',r.Type||'Néant')+
+    mf('Date création','<span class="fval mono">'+fDate(r['Date de création'])+'</span>')+
+    mf('Date prévisionnel','<span class="fval mono">'+fDate(r['Date prèv'])+'</span>')+
+    mf('Date réalisation','<span class="fval mono">'+fDate(r['Date réalisation'])+'</span>')+
+    mf('Montant','<span class="fval mono '+(m?'':'muted')+'">'+(m||'—')+'</span>')+
+    mf('Code site client','<span class="fval mono">'+(r[' Code Site client']||'—')+'</span>','full')+
+    mf('Adresse',[r.Adresse,r.Ville].filter(Boolean).join(', ')||'—','full')+
+    (r.Observation?mf('Observation',r.Observation,'full'):'')+
+    mf('Intervention','<span class="fval" style="white-space:pre-line;line-height:1.6">'+(r.Intervention||'—').replace(/</g,'&lt;')+'</span>','full')+
+    '</div>'+rapportHtml;
+
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function mf(label,val,cls){
+  return'<div class="mfield'+(cls?' '+cls:'')+'"><div class="flabel">'+label+'</div><div class="fval">'+val+'</div></div>';
+}
+
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');document.body.style.overflow='';}
+function closeOnOverlay(e){if(e.target===document.getElementById('modalOverlay'))closeModal();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+document.getElementById('searchInput').addEventListener('input',applyFilters);
+document.getElementById('filterStatut').addEventListener('change',applyFilters);
+document.getElementById('filterTeam').addEventListener('change',applyFilters);
+document.getElementById('filterType').addEventListener('change',applyFilters);
+document.getElementById('filterRapport').addEventListener('change',applyFilters);
+
+// ============================================================
+// INIT — charge WOC puis rapports
+// ============================================================
+loadWOC().then(() => loadRapports());
+
+// Auto-refresh toutes les 5 minutes
+setInterval(() => {
+  loadWOC().then(() => loadRapports());
+}, 5 * 60 * 1000);
+</script>
+
+</body></html>
