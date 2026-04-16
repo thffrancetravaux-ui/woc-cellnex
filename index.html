@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0059)file:///C:/Users/y.hamouda/Downloads/index_fixed_dates.html -->
+<!-- saved from url=(0053)file:///C:/Users/y.hamouda/Downloads/index_final.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -195,7 +195,7 @@ td{padding:9px 13px;vertical-align:middle}
         <ul class="top-list" id="topVilles"></ul>
       </div>
       <div class="chart-card">
-        <div class="chart-title">Montant par statut (€)</div>
+        <div class="chart-title">Montant par type de mission (€)</div>
         <div class="chart-wrap"><canvas id="chartMontantStatut"></canvas></div>
       </div>
     </div>
@@ -662,7 +662,11 @@ function renderCharts() {
 
   // 4. Types de mission (bar horizontal)
   const typeCount = {};
-  DATA.forEach(r => { if (r.Type) typeCount[r.Type] = (typeCount[r.Type] || 0) + 1; });
+  DATA.forEach(r => {
+    let type = r.Type || 'Accès'; // Remplace vide par Accès
+    if (type.toLowerCase() === 'néant') type = 'Accès'; // Remplace Néant par Accès
+    typeCount[type] = (typeCount[type] || 0) + 1;
+  });
   const typesSorted = Object.entries(typeCount).sort((a,b) => b[1]-a[1]);
   destroyChart('chartType');
   charts['chartType'] = new Chart(document.getElementById('chartType'), {
@@ -792,16 +796,26 @@ function renderCharts() {
     '<li><span class="city">' + ville + '</span><div class="bar-wrap"><div class="bar-fill" style="width:' + Math.round((count/maxV)*100) + '%"></div></div><span class="count">' + count + '</span></li>'
   ).join('');
 
-  // 8. Montant par statut
-  const montantOK = DATA.filter(r=>r.Statut==='OK').reduce((s,r)=>s+(parseFloat(r.Montant)||0),0);
-  const montantRAF = DATA.filter(r=>r.Statut==='RAF').reduce((s,r)=>s+(parseFloat(r.Montant)||0),0);
-  const montantNOK = DATA.filter(r=>r.Statut==='NOK').reduce((s,r)=>s+(parseFloat(r.Montant)||0),0);
+  // 8. Montant par type de mission
+  const montantType = {};
+  DATA.forEach(r => {
+    let type = r.Type || 'Accès'; // Remplace vide par Accès
+    if (type.toLowerCase() === 'néant') type = 'Accès'; // Remplace Néant par Accès
+    montantType[type] = (montantType[type] || 0) + (parseFloat(r.Montant) || 0);
+  });
+  const montantTypesSorted = Object.entries(montantType).sort((a,b) => b[1]-a[1]);
+  const colors = ['rgba(79,126,248,0.7)', 'rgba(52,211,153,0.7)', 'rgba(245,158,11,0.7)', 'rgba(239,68,68,0.7)', 'rgba(168,85,247,0.7)', 'rgba(236,72,153,0.7)'];
   destroyChart('chartMontantStatut');
   charts['chartMontantStatut'] = new Chart(document.getElementById('chartMontantStatut'), {
     type: 'bar',
     data: {
-      labels: ['OK', 'RAF', 'NOK'],
-      datasets: [{ data: [Math.round(montantOK), Math.round(montantRAF), Math.round(montantNOK)], backgroundColor: ['rgba(34,197,94,0.7)','rgba(245,158,11,0.7)','rgba(239,68,68,0.7)'], borderRadius: 6, borderWidth: 0 }]
+      labels: montantTypesSorted.map(t => t[0]),
+      datasets: [{ 
+        data: montantTypesSorted.map(t => Math.round(t[1])), 
+        backgroundColor: montantTypesSorted.map((_, i) => colors[i % colors.length]), 
+        borderRadius: 6, 
+        borderWidth: 0 
+      }]
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#2e3249' }, ticks: { callback: v => v.toLocaleString('fr-FR') + '€' } }, x: { grid: { display: false } } } }
   });
