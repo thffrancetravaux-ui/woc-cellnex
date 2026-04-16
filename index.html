@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_8.html -->
+<!-- saved from url=(0060)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_9.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -655,20 +655,26 @@ function renderCharts() {
   });
 
   // 5. Évolution mensuelle
+  const monthNames = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
   const monthCount = {};
   DATA.forEach(r => {
-    if (!r['Date de création'] || r['Date de création'] === '—') return;
-    const parts = r['Date de création'].split('/');
+    const d = r['Date de création'];
+    if (!d || d === '—' || d === '') return;
+    // Format DD/MM/YYYY or D/M/YYYY
+    const parts = d.split('/');
     if (parts.length >= 2) {
-      const key = parts[1] + '/' + (parts[2] ? parts[2].substring(2) : '');
-      monthCount[key] = (monthCount[key] || 0) + 1;
+      const month = parseInt(parts[1]);
+      const year = parts[2] ? parts[2].substring(2) : '26';
+      if (month >= 1 && month <= 12) {
+        const key = monthNames[month-1] + ' ' + year;
+        const sortKey = (parts[2]||'2026') + '-' + String(month).padStart(2,'0');
+        monthCount[sortKey] = monthCount[sortKey] || { label: key, count: 0 };
+        monthCount[sortKey].count++;
+      }
     }
   });
-  const monthsSorted = Object.entries(monthCount).sort((a,b) => {
-    const [ma,ya] = a[0].split('/');
-    const [mb,yb] = b[0].split('/');
-    return (ya+ma).localeCompare(yb+mb);
-  }).slice(-12);
+  const monthsSortedRaw = Object.entries(monthCount).sort((a,b) => a[0].localeCompare(b[0])).slice(-12);
+  const monthsSorted = monthsSortedRaw.map(([k,v]) => [v.label, v.count]);
   destroyChart('chartMensuel');
   charts['chartMensuel'] = new Chart(document.getElementById('chartMensuel'), {
     type: 'line',
@@ -682,18 +688,21 @@ function renderCharts() {
   // 6. Montant par mois
   const monthMontant = {};
   DATA.forEach(r => {
-    if (!r['Date de création'] || r['Date de création'] === '—') return;
-    const parts = r['Date de création'].split('/');
+    const d = r['Date de création'];
+    if (!d || d === '—' || d === '') return;
+    const parts = d.split('/');
     if (parts.length >= 2) {
-      const key = parts[1] + '/' + (parts[2] ? parts[2].substring(2) : '');
-      monthMontant[key] = (monthMontant[key] || 0) + (parseFloat(r.Montant) || 0);
+      const month = parseInt(parts[1]);
+      const year = parts[2] ? parts[2].substring(2) : '26';
+      if (month >= 1 && month <= 12) {
+        const key = monthNames[month-1] + ' ' + year;
+        const sortKey = (parts[2]||'2026') + '-' + String(month).padStart(2,'0');
+        monthMontant[sortKey] = monthMontant[sortKey] || { label: key, total: 0 };
+        monthMontant[sortKey].total += (parseFloat(r.Montant) || 0);
+      }
     }
   });
-  const montantSorted = Object.entries(monthMontant).sort((a,b) => {
-    const [ma,ya] = a[0].split('/');
-    const [mb,yb] = b[0].split('/');
-    return (ya+ma).localeCompare(yb+mb);
-  }).slice(-12);
+  const montantSorted = Object.entries(monthMontant).sort((a,b) => a[0].localeCompare(b[0])).slice(-12).map(([k,v]) => [v.label, v.total]);
   destroyChart('chartMontant');
   charts['chartMontant'] = new Chart(document.getElementById('chartMontant'), {
     type: 'bar',
