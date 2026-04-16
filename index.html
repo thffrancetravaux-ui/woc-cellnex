@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_12.html -->
+<!-- saved from url=(0049)file:///C:/Users/y.hamouda/Downloads/index_3.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -676,22 +676,46 @@ function renderCharts() {
 
   // 5. Évolution mensuelle
   const monthNames = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+
+  // Fonction robuste pour extraire {year, month} depuis une date en string quelconque
+  function parseMonthYear(dateStr) {
+    if (!dateStr) return null;
+    const s = dateStr.toString().trim();
+    if (!s || s === '—' || s === '-' || s.startsWith('#')) return null;
+
+    // Format DD/MM/YYYY ou D/M/YYYY (français)
+    let m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+    if (m) {
+      const month = parseInt(m[2]);
+      let year = parseInt(m[3]);
+      if (year < 100) year += 2000;
+      if (month >= 1 && month <= 12) return { year, month };
+    }
+
+    // Format YYYY-MM-DD (ISO)
+    m = s.match(/^(\d{4})[\-\/](\d{1,2})[\-\/](\d{1,2})/);
+    if (m) {
+      const month = parseInt(m[2]);
+      const year = parseInt(m[1]);
+      if (month >= 1 && month <= 12) return { year, month };
+    }
+
+    // Fallback: essayer Date.parse
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      return { year: d.getFullYear(), month: d.getMonth() + 1 };
+    }
+    return null;
+  }
+
   const monthCount = {};
   DATA.forEach(r => {
-    const d = r['Date de création'];
-    if (!d || d === '—' || d === '') return;
-    // Format DD/MM/YYYY or D/M/YYYY
-    const parts = d.split('/');
-    if (parts.length >= 2) {
-      const month = parseInt(parts[1]);
-      const year = parts[2] ? parts[2].substring(2) : '26';
-      if (month >= 1 && month <= 12) {
-        const key = monthNames[month-1] + ' ' + year;
-        const sortKey = (parts[2]||'2026') + '-' + String(month).padStart(2,'0');
-        monthCount[sortKey] = monthCount[sortKey] || { label: key, count: 0 };
-        monthCount[sortKey].count++;
-      }
-    }
+    const my = parseMonthYear(r['Date de création']);
+    if (!my) return;
+    const key = my.year + '-' + String(my.month).padStart(2,'0');
+    const label = monthNames[my.month-1] + ' ' + String(my.year).substring(2);
+    monthCount[key] = monthCount[key] || { label, count: 0 };
+    monthCount[key].count++;
   });
   const monthsSortedRaw = Object.entries(monthCount).sort((a,b) => a[0].localeCompare(b[0])).slice(-12);
   const monthsSorted = monthsSortedRaw.map(([k,v]) => [v.label, v.count]);
@@ -708,19 +732,12 @@ function renderCharts() {
   // 6. Montant par mois
   const monthMontant = {};
   DATA.forEach(r => {
-    const d = r['Date de création'];
-    if (!d || d === '—' || d === '') return;
-    const parts = d.split('/');
-    if (parts.length >= 2) {
-      const month = parseInt(parts[1]);
-      const year = parts[2] ? parts[2].substring(2) : '26';
-      if (month >= 1 && month <= 12) {
-        const key = monthNames[month-1] + ' ' + year;
-        const sortKey = (parts[2]||'2026') + '-' + String(month).padStart(2,'0');
-        monthMontant[sortKey] = monthMontant[sortKey] || { label: key, total: 0 };
-        monthMontant[sortKey].total += (parseFloat(r.Montant) || 0);
-      }
-    }
+    const my = parseMonthYear(r['Date de création']);
+    if (!my) return;
+    const key = my.year + '-' + String(my.month).padStart(2,'0');
+    const label = monthNames[my.month-1] + ' ' + String(my.year).substring(2);
+    monthMontant[key] = monthMontant[key] || { label, total: 0 };
+    monthMontant[key].total += (parseFloat(r.Montant) || 0);
   });
   const montantSorted = Object.entries(monthMontant).sort((a,b) => a[0].localeCompare(b[0])).slice(-12).map(([k,v]) => [v.label, v.total]);
   destroyChart('chartMontant');
@@ -735,7 +752,12 @@ function renderCharts() {
 
   // 7. Top 10 villes
   const villeCount = {};
-  DATA.forEach(r => { if (r.Ville && r.Ville !== '—') villeCount[r.Ville] = (villeCount[r.Ville] || 0) + 1; });
+  DATA.forEach(r => {
+    const v = (r.Ville || '').toString().trim();
+    // Filtre les villes vides, tirets, #N/A, #REF!, #ERROR, null, undefined
+    if (!v || v === '—' || v === '-' || v.startsWith('#') || v.toLowerCase() === 'null' || v.toLowerCase() === 'undefined') return;
+    villeCount[v] = (villeCount[v] || 0) + 1;
+  });
   const top10 = Object.entries(villeCount).sort((a,b) => b[1]-a[1]).slice(0,10);
   const maxV = top10[0] ? top10[0][1] : 1;
   document.getElementById('topVilles').innerHTML = top10.map(([ville, count]) =>
