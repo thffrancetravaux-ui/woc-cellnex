@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_6.html -->
+<!-- saved from url=(0060)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_7.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CELLNEX — WOC Correctifs 2026</title>
+<script src="./index_files/chart.umd.min.js.télécharger"></script>
 <style>
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#222535;--border:#2e3249;--text:#e8eaf0;--text-muted:#7b8199;--accent:#4f7ef8;--accent-glow:rgba(79,126,248,0.15);--ok:#22c55e;--ok-bg:rgba(34,197,94,0.12);--raf:#f59e0b;--raf-bg:rgba(245,158,11,0.12);--nok:#ef4444;--nok-bg:rgba(239,68,68,0.12);--acces:#818cf8;--maintenance:#34d399}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -89,6 +91,27 @@ td{padding:9px 13px;vertical-align:middle}
 .page-btn:hover{background:var(--accent-glow);border-color:var(--accent);color:var(--accent)}.page-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}.page-btn:disabled{opacity:.3;cursor:not-allowed}
 .page-info{font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace}
 ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:#444a6a}
+
+
+/* DASHBOARD */
+.dashboard{margin-bottom:20px}
+.dashboard-title{font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.dashboard-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.charts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+.charts-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:14px}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.chart-title{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.chart-wrap{position:relative;height:200px}
+.chart-wrap-sm{position:relative;height:180px}
+.taux-wrap{display:flex;align-items:center;justify-content:center;flex-direction:column;height:180px;gap:8px}
+.taux-val{font-size:48px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--ok)}
+.taux-lbl{font-size:12px;color:var(--text-muted)}
+.top-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto}
+.top-list li{display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.top-list .city{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.top-list .bar-wrap{flex:1;margin:0 8px;background:var(--surface2);border-radius:3px;height:5px;overflow:hidden}
+.top-list .bar-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s}
+.top-list .count{color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;min-width:24px;text-align:right}
 </style>
 </head>
 <body>
@@ -107,6 +130,58 @@ td{padding:9px 13px;vertical-align:middle}
 </div>
 
 <div class="container">
+
+  <!-- DASHBOARD -->
+  <div class="dashboard">
+    <div class="dashboard-title">📊 Tableau de bord</div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Statuts des WOC</div>
+        <div class="chart-wrap-sm"><canvas id="chartStatut"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Taux de complétion</div>
+        <div class="taux-wrap">
+          <div class="taux-val" id="tauxVal">—</div>
+          <div class="taux-lbl">des WOC sont terminés (OK)</div>
+          <canvas id="chartTaux" style="max-height:80px;max-width:80px"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Répartition par équipe</div>
+        <div class="chart-wrap-sm"><canvas id="chartEquipe"></canvas></div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">WOC par type de mission</div>
+        <div class="chart-wrap"><canvas id="chartType"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Évolution mensuelle des WOC</div>
+        <div class="chart-wrap"><canvas id="chartMensuel"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Montant facturé par mois (€)</div>
+        <div class="chart-wrap"><canvas id="chartMontant"></canvas></div>
+      </div>
+    </div>
+
+    <div class="charts-grid-2">
+      <div class="chart-card">
+        <div class="chart-title">Top 10 villes</div>
+        <ul class="top-list" id="topVilles"></ul>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Montant par statut (€)</div>
+        <div class="chart-wrap"><canvas id="chartMontantStatut"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTERS -->
   <div class="filter-bar">
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
@@ -177,6 +252,7 @@ td{padding:9px 13px;vertical-align:middle}
 </div>
 
 <script>
+
 const WOC_SHEET_ID = '188QhJUe5NyrcPpfJ8tqd9uaOgBB5qFniEy1GzqCVPEA';
 const RAP_SHEET_ID = '1v0sYI6n3yYenrKoSjp_GOpj-Ao_AURQ_HHvo2NYX1u4';
 
@@ -504,6 +580,152 @@ loadWOC().then(() => loadRapports());
 setInterval(() => {
   loadWOC().then(() => loadRapports());
 }, 5 * 60 * 1000);
+
+
+// ============================================================
+// CHARTS
+// ============================================================
+let charts = {};
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+Chart.defaults.color = '#7b8199';
+Chart.defaults.borderColor = '#2e3249';
+Chart.defaults.font.family = "'Inter', sans-serif";
+
+function renderCharts() {
+  if (!DATA || DATA.length === 0) return;
+
+  const ok = DATA.filter(r => r.Statut === 'OK').length;
+  const raf = DATA.filter(r => r.Statut === 'RAF').length;
+  const nok = DATA.filter(r => r.Statut === 'NOK').length;
+  const autres = DATA.filter(r => !['OK','RAF','NOK'].includes(r.Statut)).length;
+
+  // 1. Statuts (donut)
+  destroyChart('chartStatut');
+  charts['chartStatut'] = new Chart(document.getElementById('chartStatut'), {
+    type: 'doughnut',
+    data: {
+      labels: ['OK', 'RAF', 'NOK', 'Autres'],
+      datasets: [{ data: [ok, raf, nok, autres], backgroundColor: ['#22c55e','#f59e0b','#ef4444','#7b8199'], borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 10, font: { size: 11 } } } } }
+  });
+
+  // 2. Taux de complétion
+  const taux = Math.round((ok / DATA.length) * 100);
+  document.getElementById('tauxVal').textContent = taux + '%';
+  document.getElementById('tauxVal').style.color = taux >= 70 ? 'var(--ok)' : taux >= 40 ? 'var(--raf)' : 'var(--nok)';
+
+  // 3. Équipes (bar)
+  const acces = DATA.filter(r => r.Team === 'Accès').length;
+  const maintenance = DATA.filter(r => r.Team === 'Maintenance').length;
+  destroyChart('chartEquipe');
+  charts['chartEquipe'] = new Chart(document.getElementById('chartEquipe'), {
+    type: 'bar',
+    data: {
+      labels: ['Accès', 'Maintenance'],
+      datasets: [{ data: [acces, maintenance], backgroundColor: ['rgba(129,140,248,0.7)','rgba(52,211,153,0.7)'], borderRadius: 6, borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#2e3249' } }, x: { grid: { display: false } } } }
+  });
+
+  // 4. Types de mission (bar horizontal)
+  const typeCount = {};
+  DATA.forEach(r => { if (r.Type) typeCount[r.Type] = (typeCount[r.Type] || 0) + 1; });
+  const typesSorted = Object.entries(typeCount).sort((a,b) => b[1]-a[1]);
+  destroyChart('chartType');
+  charts['chartType'] = new Chart(document.getElementById('chartType'), {
+    type: 'bar',
+    data: {
+      labels: typesSorted.map(t => t[0]),
+      datasets: [{ data: typesSorted.map(t => t[1]), backgroundColor: 'rgba(79,126,248,0.7)', borderRadius: 6, borderWidth: 0 }]
+    },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: '#2e3249' } }, y: { grid: { display: false }, ticks: { font: { size: 10 } } } } }
+  });
+
+  // 5. Évolution mensuelle
+  const monthCount = {};
+  DATA.forEach(r => {
+    if (!r['Date de création'] || r['Date de création'] === '—') return;
+    const parts = r['Date de création'].split('/');
+    if (parts.length >= 2) {
+      const key = parts[1] + '/' + (parts[2] ? parts[2].substring(2) : '');
+      monthCount[key] = (monthCount[key] || 0) + 1;
+    }
+  });
+  const monthsSorted = Object.entries(monthCount).sort((a,b) => {
+    const [ma,ya] = a[0].split('/');
+    const [mb,yb] = b[0].split('/');
+    return (ya+ma).localeCompare(yb+mb);
+  }).slice(-12);
+  destroyChart('chartMensuel');
+  charts['chartMensuel'] = new Chart(document.getElementById('chartMensuel'), {
+    type: 'line',
+    data: {
+      labels: monthsSorted.map(m => m[0]),
+      datasets: [{ data: monthsSorted.map(m => m[1]), borderColor: '#4f7ef8', backgroundColor: 'rgba(79,126,248,0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#4f7ef8', pointRadius: 4, borderWidth: 2 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#2e3249' } }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } }
+  });
+
+  // 6. Montant par mois
+  const monthMontant = {};
+  DATA.forEach(r => {
+    if (!r['Date de création'] || r['Date de création'] === '—') return;
+    const parts = r['Date de création'].split('/');
+    if (parts.length >= 2) {
+      const key = parts[1] + '/' + (parts[2] ? parts[2].substring(2) : '');
+      monthMontant[key] = (monthMontant[key] || 0) + (parseFloat(r.Montant) || 0);
+    }
+  });
+  const montantSorted = Object.entries(monthMontant).sort((a,b) => {
+    const [ma,ya] = a[0].split('/');
+    const [mb,yb] = b[0].split('/');
+    return (ya+ma).localeCompare(yb+mb);
+  }).slice(-12);
+  destroyChart('chartMontant');
+  charts['chartMontant'] = new Chart(document.getElementById('chartMontant'), {
+    type: 'bar',
+    data: {
+      labels: montantSorted.map(m => m[0]),
+      datasets: [{ data: montantSorted.map(m => Math.round(m[1])), backgroundColor: 'rgba(52,211,153,0.7)', borderRadius: 6, borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#2e3249' }, ticks: { callback: v => v.toLocaleString('fr-FR') + '€' } }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } }
+  });
+
+  // 7. Top 10 villes
+  const villeCount = {};
+  DATA.forEach(r => { if (r.Ville && r.Ville !== '—') villeCount[r.Ville] = (villeCount[r.Ville] || 0) + 1; });
+  const top10 = Object.entries(villeCount).sort((a,b) => b[1]-a[1]).slice(0,10);
+  const maxV = top10[0] ? top10[0][1] : 1;
+  document.getElementById('topVilles').innerHTML = top10.map(([ville, count]) =>
+    '<li><span class="city">' + ville + '</span><div class="bar-wrap"><div class="bar-fill" style="width:' + Math.round((count/maxV)*100) + '%"></div></div><span class="count">' + count + '</span></li>'
+  ).join('');
+
+  // 8. Montant par statut
+  const montantOK = DATA.filter(r=>r.Statut==='OK').reduce((s,r)=>s+(parseFloat(r.Montant)||0),0);
+  const montantRAF = DATA.filter(r=>r.Statut==='RAF').reduce((s,r)=>s+(parseFloat(r.Montant)||0),0);
+  const montantNOK = DATA.filter(r=>r.Statut==='NOK').reduce((s,r)=>s+(parseFloat(r.Montant)||0),0);
+  destroyChart('chartMontantStatut');
+  charts['chartMontantStatut'] = new Chart(document.getElementById('chartMontantStatut'), {
+    type: 'bar',
+    data: {
+      labels: ['OK', 'RAF', 'NOK'],
+      datasets: [{ data: [Math.round(montantOK), Math.round(montantRAF), Math.round(montantNOK)], backgroundColor: ['rgba(34,197,94,0.7)','rgba(245,158,11,0.7)','rgba(239,68,68,0.7)'], borderRadius: 6, borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#2e3249' }, ticks: { callback: v => v.toLocaleString('fr-FR') + '€' } }, x: { grid: { display: false } } } }
+  });
+}
+
+// Hook into loadWOC to render charts after data loads
+const _origLoadWOC = loadWOC;
+loadWOC = async function() {
+  await _origLoadWOC();
+  renderCharts();
+};
 </script>
 
 </body></html>
