@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///C:/Users/y.hamouda/Downloads/index_4.html -->
+<!-- saved from url=(0049)file:///C:/Users/y.hamouda/Downloads/index_7.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -804,19 +804,25 @@ function renderCharts() {
       if (month >= 1 && month <= 12) return { year, month };
     }
 
-    // Fallback: essayer Date.parse
-    const d = new Date(s);
-    if (!isNaN(d.getTime())) {
-      return { year: d.getFullYear(), month: d.getMonth() + 1 };
+    // Pas de fallback new Date() : trop imprévisible (peut inventer des mois)
+    // Si on arrive ici, la donnée n'est pas un format reconnu → on l'ignore
+    if (typeof console !== 'undefined' && console.debug) {
+      console.debug('[Chart] Date non reconnue, ignorée:', s);
     }
     return null;
   }
+
+  // Limite : ne pas afficher de mois postérieur au mois courant
+  const now = new Date();
+  const currentKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2,'0');
 
   const monthCount = {};
   DATA.forEach(r => {
     const my = parseMonthYear(r['Date de création']);
     if (!my) return;
     const key = my.year + '-' + String(my.month).padStart(2,'0');
+    // Filtre les mois dans le futur (plus loin que le mois en cours)
+    if (key > currentKey) return;
     const label = monthNames[my.month-1] + ' ' + String(my.year).substring(2);
     monthCount[key] = monthCount[key] || { label, count: 0 };
     monthCount[key].count++;
@@ -839,6 +845,8 @@ function renderCharts() {
     const my = parseMonthYear(r['Date de création']);
     if (!my) return;
     const key = my.year + '-' + String(my.month).padStart(2,'0');
+    // Filtre les mois dans le futur (plus loin que le mois en cours)
+    if (key > currentKey) return;
     const label = monthNames[my.month-1] + ' ' + String(my.year).substring(2);
     monthMontant[key] = monthMontant[key] || { label, total: 0 };
     monthMontant[key].total += (parseFloat(r.Montant) || 0);
