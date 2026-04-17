@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0053)file:///C:/Users/y.hamouda/Downloads/index_final.html -->
+<!-- saved from url=(0049)file:///C:/Users/y.hamouda/Downloads/index_4.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -106,6 +106,17 @@ td{padding:9px 13px;vertical-align:middle}
 .rapport-block a{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;background:var(--ok);color:#fff;text-decoration:none;transition:opacity .15s;white-space:nowrap}
 .rapport-block a:hover{opacity:.85}
 .no-rapport-block{margin-top:14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-size:12px;color:var(--text-muted);text-align:center}
+.rapports-list{margin-top:14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:14px 16px}
+.rapports-list-header{font-size:13px;font-weight:600;color:var(--ok);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.rapports-list-items{display:flex;flex-direction:column;gap:8px}
+.rapport-item{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.rapport-item-info{font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace}
+.rapport-item-info .rapport-date{color:var(--text);font-weight:500}
+.rapport-item-info .rapport-badge{display:inline-block;background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:.3px;text-transform:uppercase}
+.rapport-item a{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;background:var(--ok);color:#fff;text-decoration:none;transition:opacity .15s;white-space:nowrap}
+.rapport-item a:hover{opacity:.85}
+.pdf-btn-multi{position:relative}
+.pdf-btn-multi::after{content:attr(data-count);position:absolute;top:-5px;right:-5px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--surface)}
 .pagination{display:flex;align-items:center;justify-content:center;gap:5px;padding:14px;border-top:1px solid var(--border);flex-wrap:wrap}
 .page-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text-muted);font-size:12px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .15s}
 .page-btn:hover{background:var(--accent-glow);border-color:var(--accent);color:var(--accent)}.page-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}.page-btn:disabled{opacity:.3;cursor:not-allowed}
@@ -371,16 +382,30 @@ async function loadRapports() {
     }
     const json = JSON.parse(jsonStr);
     const rows = json.table.rows;
+    // RAPPORTS[code_fr] est maintenant un tableau de rapports au lieu d'un seul objet
     rows.forEach(row => {
       if (row.c && row.c[0] && row.c[0].v) {
         const code_fr = row.c[0].v.toString().trim();
         const lien_pdf = row.c[2] ? (row.c[2].v || '') : '';
         const date = row.c[3] ? (row.c[3].f || row.c[3].v || '') : '';
-        if (lien_pdf) RAPPORTS[code_fr] = { lien_pdf, date };
+        if (lien_pdf) {
+          if (!RAPPORTS[code_fr]) RAPPORTS[code_fr] = [];
+          RAPPORTS[code_fr].push({ lien_pdf, date });
+        }
       }
     });
-    const count = Object.keys(RAPPORTS).length;
-    document.getElementById('syncLabel').textContent = DATA.length + ' WOC · ' + count + ' rapport' + (count > 1 ? 's' : '');
+    // Trier chaque tableau du plus récent au plus ancien
+    Object.keys(RAPPORTS).forEach(code_fr => {
+      RAPPORTS[code_fr].sort((a, b) => {
+        const da = new Date(a.date).getTime() || 0;
+        const db = new Date(b.date).getTime() || 0;
+        return db - da; // Plus récent en premier
+      });
+    });
+    // Compter le nombre total de rapports (pas juste les Code FR uniques)
+    const totalRapports = Object.values(RAPPORTS).reduce((sum, arr) => sum + arr.length, 0);
+    const codeCount = Object.keys(RAPPORTS).length;
+    document.getElementById('syncLabel').textContent = DATA.length + ' WOC · ' + totalRapports + ' rapport' + (totalRapports > 1 ? 's' : '') + (totalRapports !== codeCount ? ' (' + codeCount + ' WOC)' : '');
     render();
   } catch(e) {
     console.warn('Rapports load error:', e);
@@ -389,11 +414,27 @@ async function loadRapports() {
 
 function rapportBtn(code_fr) {
   if (!code_fr) return '<span class="no-rapport">—</span>';
-  const r = RAPPORTS[code_fr];
-  if (r && r.lien_pdf) {
-    return '<a class="pdf-btn" href="' + r.lien_pdf + '" target="_blank" onclick="event.stopPropagation()">📄 Rapport</a>';
+  const arr = RAPPORTS[code_fr];
+  if (arr && arr.length > 0) {
+    const n = arr.length;
+    // S'il n'y a qu'un rapport : bouton classique qui ouvre directement le PDF
+    if (n === 1) {
+      return '<a class="pdf-btn" href="' + arr[0].lien_pdf + '" target="_blank" onclick="event.stopPropagation()">📄 Rapport</a>';
+    }
+    // Plusieurs rapports : bouton qui ouvre le modal détail (pour voir la liste)
+    // On stoppe la propagation mais on simule le clic sur la ligne pour ouvrir le détail
+    return '<a class="pdf-btn pdf-btn-multi" data-count="' + n + '" href="javascript:void(0)" onclick="event.stopPropagation();openModalByCodeFr(\'' + code_fr.replace(/'/g, "\\'") + '\')">📄 Rapports</a>';
   }
   return '<span class="no-rapport">—</span>';
+}
+
+// Ouvrir le modal détail à partir d'un Code FR (utilisé quand plusieurs rapports)
+function openModalByCodeFr(code_fr) {
+  const row = DATA.find(r => r['Code FR'] === code_fr);
+  if (row) {
+    const idx = DATA.indexOf(row);
+    openModal(idx);
+  }
 }
 
 // ============================================================
@@ -439,8 +480,8 @@ function applyFilters(){
     if(s&&r.Statut!==s)return false;
     if(t&&r.Team!==t)return false;
     if(ty&&r.Type!==ty)return false;
-    if(rap==='oui'&&!RAPPORTS[r['Code FR']])return false;
-    if(rap==='non'&&RAPPORTS[r['Code FR']])return false;
+    if(rap==='oui'&&(!RAPPORTS[r['Code FR']]||RAPPORTS[r['Code FR']].length===0))return false;
+    if(rap==='non'&&RAPPORTS[r['Code FR']]&&RAPPORTS[r['Code FR']].length>0)return false;
     if(q){
       const h=[r.WOC,r['Code FR'],r['Nom du site'],r.Ville,r.Intervention,r.Adresse].join(' ').toLowerCase();
       if(!h.includes(q))return false;
@@ -477,6 +518,19 @@ function resetFilters(){
 // RENDER
 // ============================================================
 function fDate(d){if(!d||d==='')return'—';if(d.includes('Date('))return'—';return d;}
+function fDateRapport(d){
+  if(!d||d==='')return '—';
+  // Format ISO attendu : 2026-04-17T09:41:42.416+02:00
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return d; // fallback si date invalide
+  const mois = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+  const jour = dt.getDate();
+  const m = mois[dt.getMonth()];
+  const annee = dt.getFullYear();
+  const h = String(dt.getHours()).padStart(2,'0');
+  const min = String(dt.getMinutes()).padStart(2,'0');
+  return jour+' '+m+' '+annee+', '+h+':'+min;
+}
 function fMontant(m){const v=parseFloat(m);if(!v)return null;return v.toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:2})+' €';}
 function trunc(s,n){if(!s)return'';return s.length>n?s.substring(0,n)+'…':s;}
 
@@ -552,10 +606,28 @@ function openModal(idx){
   document.getElementById('mSub').textContent=[r['Nom du site'],r.Ville].filter(Boolean).join(' · ')||'—';
   const sc=r.Statut==='OK'?'ok':r.Statut==='RAF'?'raf':r.Statut==='NOK'?'nok':'';
   const m=fMontant(r.Montant);
-  const rap=RAPPORTS[r['Code FR']];
-  const rapportHtml = rap && rap.lien_pdf
-    ? '<div class="rapport-block"><div class="rapport-block-info"><strong>📄 Rapport disponible</strong>Déposé le '+rap.date+'</div><a href="'+rap.lien_pdf+'" target="_blank">Ouvrir le PDF →</a></div>'
-    : '<div class="no-rapport-block">📭 Aucun rapport disponible pour ce WOC</div>';
+  const rapArr=RAPPORTS[r['Code FR']];
+  let rapportHtml;
+  if (rapArr && rapArr.length > 0) {
+    const n = rapArr.length;
+    const headerTxt = n === 1 ? '📄 Rapport disponible' : '📄 ' + n + ' rapports disponibles';
+    const items = rapArr.map((rp, i) => {
+      const badge = (n > 1 && i === 0) ? '<span class="rapport-badge">Plus récent</span>' : '';
+      const dateFmt = fDateRapport(rp.date);
+      return '<div class="rapport-item">'+
+        '<div class="rapport-item-info">'+
+          '<span class="rapport-date">'+dateFmt+'</span>'+badge+
+        '</div>'+
+        '<a href="'+rp.lien_pdf+'" target="_blank">Ouvrir le PDF →</a>'+
+      '</div>';
+    }).join('');
+    rapportHtml = '<div class="rapports-list">'+
+      '<div class="rapports-list-header">'+headerTxt+'</div>'+
+      '<div class="rapports-list-items">'+items+'</div>'+
+    '</div>';
+  } else {
+    rapportHtml = '<div class="no-rapport-block">📭 Aucun rapport disponible pour ce WOC</div>';
+  }
 
   document.getElementById('modalBody').innerHTML=
     '<div class="mgrid">'+
