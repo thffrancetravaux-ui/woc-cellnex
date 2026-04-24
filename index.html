@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///C:/Users/y.hamouda/Downloads/index_7.html -->
+<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_14.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -106,17 +106,6 @@ td{padding:9px 13px;vertical-align:middle}
 .rapport-block a{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;background:var(--ok);color:#fff;text-decoration:none;transition:opacity .15s;white-space:nowrap}
 .rapport-block a:hover{opacity:.85}
 .no-rapport-block{margin-top:14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-size:12px;color:var(--text-muted);text-align:center}
-.rapports-list{margin-top:14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:14px 16px}
-.rapports-list-header{font-size:13px;font-weight:600;color:var(--ok);margin-bottom:12px;display:flex;align-items:center;gap:6px}
-.rapports-list-items{display:flex;flex-direction:column;gap:8px}
-.rapport-item{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
-.rapport-item-info{font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace}
-.rapport-item-info .rapport-date{color:var(--text);font-weight:500}
-.rapport-item-info .rapport-badge{display:inline-block;background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:.3px;text-transform:uppercase}
-.rapport-item a{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;background:var(--ok);color:#fff;text-decoration:none;transition:opacity .15s;white-space:nowrap}
-.rapport-item a:hover{opacity:.85}
-.pdf-btn-multi{position:relative}
-.pdf-btn-multi::after{content:attr(data-count);position:absolute;top:-5px;right:-5px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--surface)}
 .pagination{display:flex;align-items:center;justify-content:center;gap:5px;padding:14px;border-top:1px solid var(--border);flex-wrap:wrap}
 .page-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text-muted);font-size:12px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .15s}
 .page-btn:hover{background:var(--accent-glow);border-color:var(--accent);color:var(--accent)}.page-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}.page-btn:disabled{opacity:.3;cursor:not-allowed}
@@ -206,7 +195,7 @@ td{padding:9px 13px;vertical-align:middle}
         <ul class="top-list" id="topVilles"></ul>
       </div>
       <div class="chart-card">
-        <div class="chart-title">Montant par type de mission (€)</div>
+        <div class="chart-title">Montant par statut (€)</div>
         <div class="chart-wrap"><canvas id="chartMontantStatut"></canvas></div>
       </div>
     </div>
@@ -320,7 +309,12 @@ async function loadWOC() {
         const v = (i) => row.c[i] ? (row.c[i].v !== null ? String(row.c[i].v) : '') : '';
     const fd = (cell) => {
       if (!cell || cell.v === null) return '';
-      if (cell.f) return cell.f; // formatted value
+      // Google Sheets date values are numbers (days since 1899-12-30)
+      if (typeof cell.v === 'number') {
+        const d = new Date(Math.round((cell.v - 25569) * 86400 * 1000));
+        return d.toLocaleDateString('fr-FR');
+      }
+      if (cell.f) return cell.f;
       if (typeof cell.v === 'string' && cell.v.includes('Date(')) {
         const m = cell.v.match(/Date\((\d+),(\d+),(\d+)\)/);
         if (m) {
@@ -331,6 +325,11 @@ async function loadWOC() {
       return String(cell.v);
     };
         const vf = (i) => row.c[i] ? (row.c[i].f || row.c[i].v || '') : '';
+        // Parse montant: handle French format "327,60 €" or number
+        const rawMontant = row.c[10] ? (row.c[10].v !== null ? row.c[10].v : '') : '';
+        const montantStr = String(rawMontant).replace(/[€\s]/g,'').replace(',','.').trim();
+        const montantVal = parseFloat(montantStr) || 0;
+
         return {
           'Code FR': v(0),
           'WOC': v(1),
@@ -342,7 +341,7 @@ async function loadWOC() {
           'Date prèv': fd(row.c[7]),
           'Date réalisation': fd(row.c[8]),
           'Statut': v(9),
-          'Montant': v(10),
+          'Montant': montantVal,
           ' Code Site client': v(11),
           'Nom du site': v(12),
           'Adresse': v(13),
@@ -382,30 +381,16 @@ async function loadRapports() {
     }
     const json = JSON.parse(jsonStr);
     const rows = json.table.rows;
-    // RAPPORTS[code_fr] est maintenant un tableau de rapports au lieu d'un seul objet
     rows.forEach(row => {
       if (row.c && row.c[0] && row.c[0].v) {
         const code_fr = row.c[0].v.toString().trim();
         const lien_pdf = row.c[2] ? (row.c[2].v || '') : '';
         const date = row.c[3] ? (row.c[3].f || row.c[3].v || '') : '';
-        if (lien_pdf) {
-          if (!RAPPORTS[code_fr]) RAPPORTS[code_fr] = [];
-          RAPPORTS[code_fr].push({ lien_pdf, date });
-        }
+        if (lien_pdf) RAPPORTS[code_fr] = { lien_pdf, date };
       }
     });
-    // Trier chaque tableau du plus récent au plus ancien
-    Object.keys(RAPPORTS).forEach(code_fr => {
-      RAPPORTS[code_fr].sort((a, b) => {
-        const da = new Date(a.date).getTime() || 0;
-        const db = new Date(b.date).getTime() || 0;
-        return db - da; // Plus récent en premier
-      });
-    });
-    // Compter le nombre total de rapports (pas juste les Code FR uniques)
-    const totalRapports = Object.values(RAPPORTS).reduce((sum, arr) => sum + arr.length, 0);
-    const codeCount = Object.keys(RAPPORTS).length;
-    document.getElementById('syncLabel').textContent = DATA.length + ' WOC · ' + totalRapports + ' rapport' + (totalRapports > 1 ? 's' : '') + (totalRapports !== codeCount ? ' (' + codeCount + ' WOC)' : '');
+    const count = Object.keys(RAPPORTS).length;
+    document.getElementById('syncLabel').textContent = DATA.length + ' WOC · ' + count + ' rapport' + (count > 1 ? 's' : '');
     render();
   } catch(e) {
     console.warn('Rapports load error:', e);
@@ -414,27 +399,11 @@ async function loadRapports() {
 
 function rapportBtn(code_fr) {
   if (!code_fr) return '<span class="no-rapport">—</span>';
-  const arr = RAPPORTS[code_fr];
-  if (arr && arr.length > 0) {
-    const n = arr.length;
-    // S'il n'y a qu'un rapport : bouton classique qui ouvre directement le PDF
-    if (n === 1) {
-      return '<a class="pdf-btn" href="' + arr[0].lien_pdf + '" target="_blank" onclick="event.stopPropagation()">📄 Rapport</a>';
-    }
-    // Plusieurs rapports : bouton qui ouvre le modal détail (pour voir la liste)
-    // On stoppe la propagation mais on simule le clic sur la ligne pour ouvrir le détail
-    return '<a class="pdf-btn pdf-btn-multi" data-count="' + n + '" href="javascript:void(0)" onclick="event.stopPropagation();openModalByCodeFr(\'' + code_fr.replace(/'/g, "\\'") + '\')">📄 Rapports</a>';
+  const r = RAPPORTS[code_fr];
+  if (r && r.lien_pdf) {
+    return '<a class="pdf-btn" href="' + r.lien_pdf + '" target="_blank" onclick="event.stopPropagation()">📄 Rapport</a>';
   }
   return '<span class="no-rapport">—</span>';
-}
-
-// Ouvrir le modal détail à partir d'un Code FR (utilisé quand plusieurs rapports)
-function openModalByCodeFr(code_fr) {
-  const row = DATA.find(r => r['Code FR'] === code_fr);
-  if (row) {
-    const idx = DATA.indexOf(row);
-    openModal(idx);
-  }
 }
 
 // ============================================================
@@ -480,8 +449,8 @@ function applyFilters(){
     if(s&&r.Statut!==s)return false;
     if(t&&r.Team!==t)return false;
     if(ty&&r.Type!==ty)return false;
-    if(rap==='oui'&&(!RAPPORTS[r['Code FR']]||RAPPORTS[r['Code FR']].length===0))return false;
-    if(rap==='non'&&RAPPORTS[r['Code FR']]&&RAPPORTS[r['Code FR']].length>0)return false;
+    if(rap==='oui'&&!RAPPORTS[r['Code FR']])return false;
+    if(rap==='non'&&RAPPORTS[r['Code FR']])return false;
     if(q){
       const h=[r.WOC,r['Code FR'],r['Nom du site'],r.Ville,r.Intervention,r.Adresse].join(' ').toLowerCase();
       if(!h.includes(q))return false;
@@ -518,20 +487,7 @@ function resetFilters(){
 // RENDER
 // ============================================================
 function fDate(d){if(!d||d==='')return'—';if(d.includes('Date('))return'—';return d;}
-function fDateRapport(d){
-  if(!d||d==='')return '—';
-  // Format ISO attendu : 2026-04-17T09:41:42.416+02:00
-  const dt = new Date(d);
-  if (isNaN(dt.getTime())) return d; // fallback si date invalide
-  const mois = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
-  const jour = dt.getDate();
-  const m = mois[dt.getMonth()];
-  const annee = dt.getFullYear();
-  const h = String(dt.getHours()).padStart(2,'0');
-  const min = String(dt.getMinutes()).padStart(2,'0');
-  return jour+' '+m+' '+annee+', '+h+':'+min;
-}
-function fMontant(m){const v=parseFloat(m);if(!v)return null;return v.toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:2})+' €';}
+function fMontant(m){const v=typeof m==='number'?m:parseFloat(String(m).replace(/[€\s]/g,'').replace(',','.'));if(!v)return null;return v.toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:2})+' €';}
 function trunc(s,n){if(!s)return'';return s.length>n?s.substring(0,n)+'…':s;}
 
 function sBadge(s){
@@ -606,28 +562,10 @@ function openModal(idx){
   document.getElementById('mSub').textContent=[r['Nom du site'],r.Ville].filter(Boolean).join(' · ')||'—';
   const sc=r.Statut==='OK'?'ok':r.Statut==='RAF'?'raf':r.Statut==='NOK'?'nok':'';
   const m=fMontant(r.Montant);
-  const rapArr=RAPPORTS[r['Code FR']];
-  let rapportHtml;
-  if (rapArr && rapArr.length > 0) {
-    const n = rapArr.length;
-    const headerTxt = n === 1 ? '📄 Rapport disponible' : '📄 ' + n + ' rapports disponibles';
-    const items = rapArr.map((rp, i) => {
-      const badge = (n > 1 && i === 0) ? '<span class="rapport-badge">Plus récent</span>' : '';
-      const dateFmt = fDateRapport(rp.date);
-      return '<div class="rapport-item">'+
-        '<div class="rapport-item-info">'+
-          '<span class="rapport-date">'+dateFmt+'</span>'+badge+
-        '</div>'+
-        '<a href="'+rp.lien_pdf+'" target="_blank">Ouvrir le PDF →</a>'+
-      '</div>';
-    }).join('');
-    rapportHtml = '<div class="rapports-list">'+
-      '<div class="rapports-list-header">'+headerTxt+'</div>'+
-      '<div class="rapports-list-items">'+items+'</div>'+
-    '</div>';
-  } else {
-    rapportHtml = '<div class="no-rapport-block">📭 Aucun rapport disponible pour ce WOC</div>';
-  }
+  const rap=RAPPORTS[r['Code FR']];
+  const rapportHtml = rap && rap.lien_pdf
+    ? '<div class="rapport-block"><div class="rapport-block-info"><strong>📄 Rapport disponible</strong>Déposé le '+rap.date+'</div><a href="'+rap.lien_pdf+'" target="_blank">Ouvrir le PDF →</a></div>'
+    : '<div class="no-rapport-block">📭 Aucun rapport disponible pour ce WOC</div>';
 
   document.getElementById('modalBody').innerHTML=
     '<div class="mgrid">'+
@@ -734,11 +672,7 @@ function renderCharts() {
 
   // 4. Types de mission (bar horizontal)
   const typeCount = {};
-  DATA.forEach(r => {
-    let type = r.Type || 'Accès'; // Remplace vide par Accès
-    if (type.toLowerCase() === 'néant') type = 'Accès'; // Remplace Néant par Accès
-    typeCount[type] = (typeCount[type] || 0) + 1;
-  });
+  DATA.forEach(r => { if (r.Type) typeCount[r.Type] = (typeCount[r.Type] || 0) + 1; });
   const typesSorted = Object.entries(typeCount).sort((a,b) => b[1]-a[1]);
   destroyChart('chartType');
   charts['chartType'] = new Chart(document.getElementById('chartType'), {
@@ -752,80 +686,34 @@ function renderCharts() {
 
   // 5. Évolution mensuelle
   const monthNames = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
-
-  // Fonction robuste pour extraire {year, month} depuis une date française ou semaine
-  function parseMonthYear(dateStr) {
-    if (!dateStr) return null;
-    const s = dateStr.toString().trim();
-    if (!s || s === '—' || s === '-' || s.startsWith('#')) return null;
-
-    // Format semaine SXX (S03, S04, etc.) → convertir en mois approximatif
-    const weekMatch = s.match(/^S(\d{1,2})$/i);
-    if (weekMatch) {
-      const week = parseInt(weekMatch[1]);
-      if (week >= 1 && week <= 52) {
-        // Conversion semaine → mois approximatif (4.33 semaines par mois)
-        const month = Math.min(12, Math.max(1, Math.ceil(week / 4.33)));
-        return { year: 2026, month }; // Assume 2026 pour les semaines
-      }
+  const monthCount = {};
+  
+  function extractMonthYear(dateStr) {
+    if (!dateStr || dateStr === '—' || dateStr === '' || dateStr === '#N/A') return null;
+    // Format DD/MM/YYYY
+    const parts = dateStr.split('/');
+    if (parts.length >= 3) {
+      const month = parseInt(parts[1]);
+      const year = parts[2];
+      if (month >= 1 && month <= 12) return { month, year, sortKey: year + '-' + String(month).padStart(2,'0'), label: monthNames[month-1] + ' ' + year.substring(2) };
     }
-
-    // Format français DD-MMM. (23-déc., 15-févr., etc.)
-    const frenchMonths = {
-      'janv': 1, 'févr': 2, 'mars': 3, 'avr': 4, 'mai': 5, 'juin': 6,
-      'juil': 7, 'août': 8, 'sept': 9, 'oct': 10, 'nov': 11, 'déc': 12
-    };
-    const frenchMatch = s.match(/^(\d{1,2})-([a-zéàèù]+)\.?$/i);
-    if (frenchMatch) {
-      const day = parseInt(frenchMatch[1]);
-      const monthStr = frenchMatch[2].toLowerCase();
-      const month = frenchMonths[monthStr];
-      if (month) {
-        // Déterminer l'année: si mois >= 10, probablement 2025, sinon 2026
-        const year = (month >= 10) ? 2025 : 2026;
-        return { year, month };
-      }
-    }
-
-    // Format DD/MM/YYYY ou D/M/YYYY (standard français)
-    let m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
-    if (m) {
-      const month = parseInt(m[2]);
-      let year = parseInt(m[3]);
-      if (year < 100) year += 2000;
-      if (month >= 1 && month <= 12) return { year, month };
-    }
-
-    // Format YYYY-MM-DD (ISO)
-    m = s.match(/^(\d{4})[\-\/](\d{1,2})[\-\/](\d{1,2})/);
-    if (m) {
-      const month = parseInt(m[2]);
-      const year = parseInt(m[1]);
-      if (month >= 1 && month <= 12) return { year, month };
-    }
-
-    // Pas de fallback new Date() : trop imprévisible (peut inventer des mois)
-    // Si on arrive ici, la donnée n'est pas un format reconnu → on l'ignore
-    if (typeof console !== 'undefined' && console.debug) {
-      console.debug('[Chart] Date non reconnue, ignorée:', s);
+    // Format "22-déc." or "22-dec"
+    const moisFr = {'janv':1,'févr':2,'mars':3,'avr':4,'mai':5,'juin':6,'juil':7,'août':8,'sept':9,'oct':10,'nov':11,'déc':12,'dec':12,'jan':1,'fev':2,'jul':7,'aout':8};
+    const m2 = dateStr.match(/(\d+)[\-\/]([a-zéûà]+)\.?[\-\/]?(\d{2,4})?/i);
+    if (m2) {
+      const mKey = m2[2].toLowerCase().substring(0,4).replace('é','e');
+      const month = moisFr[mKey] || moisFr[m2[2].toLowerCase().substring(0,3)];
+      const year = m2[3] ? (m2[3].length === 2 ? '20'+m2[3] : m2[3]) : '2026';
+      if (month) return { month, year, sortKey: year + '-' + String(month).padStart(2,'0'), label: monthNames[month-1] + ' ' + year.substring(2) };
     }
     return null;
   }
 
-  // Limite : ne pas afficher de mois postérieur au mois courant
-  const now = new Date();
-  const currentKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2,'0');
-
-  const monthCount = {};
   DATA.forEach(r => {
-    const my = parseMonthYear(r['Date de création']);
-    if (!my) return;
-    const key = my.year + '-' + String(my.month).padStart(2,'0');
-    // Filtre les mois dans le futur (plus loin que le mois en cours)
-    if (key > currentKey) return;
-    const label = monthNames[my.month-1] + ' ' + String(my.year).substring(2);
-    monthCount[key] = monthCount[key] || { label, count: 0 };
-    monthCount[key].count++;
+    const info = extractMonthYear(r['Date de création']);
+    if (!info) return;
+    monthCount[info.sortKey] = monthCount[info.sortKey] || { label: info.label, count: 0 };
+    monthCount[info.sortKey].count++;
   });
   const monthsSortedRaw = Object.entries(monthCount).sort((a,b) => a[0].localeCompare(b[0])).slice(-12);
   const monthsSorted = monthsSortedRaw.map(([k,v]) => [v.label, v.count]);
@@ -842,14 +730,10 @@ function renderCharts() {
   // 6. Montant par mois
   const monthMontant = {};
   DATA.forEach(r => {
-    const my = parseMonthYear(r['Date de création']);
-    if (!my) return;
-    const key = my.year + '-' + String(my.month).padStart(2,'0');
-    // Filtre les mois dans le futur (plus loin que le mois en cours)
-    if (key > currentKey) return;
-    const label = monthNames[my.month-1] + ' ' + String(my.year).substring(2);
-    monthMontant[key] = monthMontant[key] || { label, total: 0 };
-    monthMontant[key].total += (parseFloat(r.Montant) || 0);
+    const info = extractMonthYear(r['Date de création']);
+    if (!info) return;
+    monthMontant[info.sortKey] = monthMontant[info.sortKey] || { label: info.label, total: 0 };
+    monthMontant[info.sortKey].total += (parseFloat(r.Montant) || 0);
   });
   const montantSorted = Object.entries(monthMontant).sort((a,b) => a[0].localeCompare(b[0])).slice(-12).map(([k,v]) => [v.label, v.total]);
   destroyChart('chartMontant');
@@ -864,11 +748,9 @@ function renderCharts() {
 
   // 7. Top 10 villes
   const villeCount = {};
-  DATA.forEach(r => {
-    const v = (r.Ville || '').toString().trim();
-    // Filtre les villes vides, tirets, #N/A, #REF!, #ERROR, null, undefined
-    if (!v || v === '—' || v === '-' || v.startsWith('#') || v.toLowerCase() === 'null' || v.toLowerCase() === 'undefined') return;
-    villeCount[v] = (villeCount[v] || 0) + 1;
+  DATA.forEach(r => { 
+    if (r.Ville && r.Ville !== '—' && r.Ville !== '#N/A' && r.Ville.trim() !== '') 
+      villeCount[r.Ville] = (villeCount[r.Ville] || 0) + 1; 
   });
   const top10 = Object.entries(villeCount).sort((a,b) => b[1]-a[1]).slice(0,10);
   const maxV = top10[0] ? top10[0][1] : 1;
@@ -876,26 +758,16 @@ function renderCharts() {
     '<li><span class="city">' + ville + '</span><div class="bar-wrap"><div class="bar-fill" style="width:' + Math.round((count/maxV)*100) + '%"></div></div><span class="count">' + count + '</span></li>'
   ).join('');
 
-  // 8. Montant par type de mission
-  const montantType = {};
-  DATA.forEach(r => {
-    let type = r.Type || 'Accès'; // Remplace vide par Accès
-    if (type.toLowerCase() === 'néant') type = 'Accès'; // Remplace Néant par Accès
-    montantType[type] = (montantType[type] || 0) + (parseFloat(r.Montant) || 0);
-  });
-  const montantTypesSorted = Object.entries(montantType).sort((a,b) => b[1]-a[1]);
-  const colors = ['rgba(79,126,248,0.7)', 'rgba(52,211,153,0.7)', 'rgba(245,158,11,0.7)', 'rgba(239,68,68,0.7)', 'rgba(168,85,247,0.7)', 'rgba(236,72,153,0.7)'];
+  // 8. Montant par statut
+  const montantOK = DATA.filter(r=>r.Statut==='OK').reduce((s,r)=>s+(parseFloat(r.Montant)||0),0);
+  const montantRAF = DATA.filter(r=>r.Statut==='RAF').reduce((s,r)=>s+(parseFloat(r.Montant)||0),0);
+  const montantNOK = DATA.filter(r=>r.Statut==='NOK').reduce((s,r)=>s+(parseFloat(r.Montant)||0),0);
   destroyChart('chartMontantStatut');
   charts['chartMontantStatut'] = new Chart(document.getElementById('chartMontantStatut'), {
     type: 'bar',
     data: {
-      labels: montantTypesSorted.map(t => t[0]),
-      datasets: [{ 
-        data: montantTypesSorted.map(t => Math.round(t[1])), 
-        backgroundColor: montantTypesSorted.map((_, i) => colors[i % colors.length]), 
-        borderRadius: 6, 
-        borderWidth: 0 
-      }]
+      labels: ['OK', 'RAF', 'NOK'],
+      datasets: [{ data: [Math.round(montantOK), Math.round(montantRAF), Math.round(montantNOK)], backgroundColor: ['rgba(34,197,94,0.7)','rgba(245,158,11,0.7)','rgba(239,68,68,0.7)'], borderRadius: 6, borderWidth: 0 }]
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#2e3249' }, ticks: { callback: v => v.toLocaleString('fr-FR') + '€' } }, x: { grid: { display: false } } } }
   });
