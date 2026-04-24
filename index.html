@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_18.html -->
+<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_19.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -725,8 +725,17 @@ function renderCharts() {
       const mStr = m2[2].toLowerCase().substring(0,4);
       const month = moisFr[mStr] || moisFr[mStr.substring(0,3)];
       // If no year in string, determine from context (assume 2025 for past dates)
-      let year = '2025';
-      if (m2[3]) year = m2[3].length === 2 ? '20' + m2[3] : m2[3];
+      // Determine year: if month > current month, it's previous year
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      let year;
+      if (m2[3]) {
+        year = m2[3].length === 2 ? '20' + m2[3] : m2[3];
+      } else {
+        // No year in string - use current or previous year based on month
+        year = month <= currentMonth ? String(currentYear) : String(currentYear - 1);
+      }
       if (month) return { month, year, sortKey: year + '-' + String(month).padStart(2,'0'), label: monthNames[month-1] + ' ' + year.substring(2) };
     }
     return null;
