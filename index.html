@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_19.html -->
+<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_20.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -273,7 +273,7 @@ td{padding:9px 13px;vertical-align:middle}
 
 <script>
 
-const WOC_SHEET_ID = '188QhJUe5NyrcPpfJ8tqd9uaOgBB5qFniEy1GzqCVPEA';
+const WOC_SHEET_ID = '11kYn2SlqvQwLIm8AENPVTcSNTeSIwqX4gd8zICpZm0A';
 const RAP_SHEET_ID = '1v0sYI6n3yYenrKoSjp_GOpj-Ao_AURQ_HHvo2NYX1u4';
 
 let DATA = [];
@@ -290,7 +290,7 @@ let sDir = -1;
 async function loadWOC() {
   try {
     document.getElementById('syncLabel').textContent = 'Chargement des WOC…';
-    const url = 'https://docs.google.com/spreadsheets/d/' + WOC_SHEET_ID + '/gviz/tq?tqx=out:json&sheet=Tableau%20de%20bord';
+    const url = 'https://docs.google.com/spreadsheets/d/' + WOC_SHEET_ID + '/gviz/tq?tqx=out:json&t=' + Date.now();
     const res = await fetch(url);
     const text = await res.text();
     // Handle both /*O_o*/ and google.visualization.Query.setResponse() prefixes
@@ -386,7 +386,7 @@ async function loadWOC() {
 // ============================================================
 async function loadRapports() {
   try {
-    const url = 'https://docs.google.com/spreadsheets/d/' + RAP_SHEET_ID + '/gviz/tq?tqx=out:json';
+    const url = 'https://docs.google.com/spreadsheets/d/' + RAP_SHEET_ID + '/gviz/tq?tqx=out:json&t=' + Date.now();
     const res = await fetch(url);
     const text = await res.text();
     // Handle both /*O_o*/ and google.visualization.Query.setResponse() prefixes
@@ -781,8 +781,12 @@ function renderCharts() {
   // 7. Top 10 villes
   const villeCount = {};
   DATA.forEach(r => { 
-    if (r.Ville && r.Ville !== '—' && r.Ville !== '#N/A' && r.Ville.trim() !== '') 
-      villeCount[r.Ville] = (villeCount[r.Ville] || 0) + 1; 
+    if (r.Ville && r.Ville !== '—' && r.Ville !== '#N/A' && r.Ville.trim() !== '') {
+      // Regroup all Paris arrondissements under "Paris"
+      let ville = r.Ville.trim();
+      if (ville.toLowerCase().startsWith('paris')) ville = 'Paris';
+      villeCount[ville] = (villeCount[ville] || 0) + 1;
+    }
   });
   const top10 = Object.entries(villeCount).sort((a,b) => b[1]-a[1]).slice(0,10);
   const maxV = top10[0] ? top10[0][1] : 1;
