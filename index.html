@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_14.html -->
+<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_15.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -303,6 +303,12 @@ async function loadWOC() {
     const json = JSON.parse(jsonStr);
     const rows = json.table.rows;
     
+    // Debug: log first few montant values
+    if (rows.length > 0) {
+      const sample = rows.slice(1, 5).map(r => r.c && r.c[10] ? JSON.stringify(r.c[10]) : 'null');
+      console.log('Montant samples:', sample);
+    }
+
     DATA = rows
       .map(row => {
         if (!row.c) return null;
