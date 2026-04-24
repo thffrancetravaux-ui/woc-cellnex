@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_15.html -->
+<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_16.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -303,10 +303,18 @@ async function loadWOC() {
     const json = JSON.parse(jsonStr);
     const rows = json.table.rows;
     
-    // Debug: log first few montant values
+    // Debug: log total montant
     if (rows.length > 0) {
-      const sample = rows.slice(1, 5).map(r => r.c && r.c[10] ? JSON.stringify(r.c[10]) : 'null');
-      console.log('Montant samples:', sample);
+      const total = rows.reduce((s, r) => {
+        if (!r.c || !r.c[10] || r.c[10].v === null) return s;
+        return s + (parseFloat(r.c[10].v) || 0);
+      }, 0);
+      console.log('Total montant brut (toutes lignes):', total);
+      console.log('Nombre de lignes total:', rows.length);
+      const withWOC = rows.filter(r => r.c && r.c[1] && r.c[1].v && String(r.c[1].v).trim() !== '' && String(r.c[1].v) !== 'WOC');
+      console.log('Lignes avec WOC:', withWOC.length);
+      const totalWOC = withWOC.reduce((s, r) => s + (parseFloat(r.c[10] ? r.c[10].v : 0) || 0), 0);
+      console.log('Total montant avec WOC:', totalWOC);
     }
 
     DATA = rows
