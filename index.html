@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_26.html -->
+<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_28.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -653,6 +653,42 @@ function destroyChart(id) {
 Chart.defaults.color = '#7b8199';
 Chart.defaults.borderColor = '#2e3249';
 Chart.defaults.font.family = "'Inter', sans-serif";
+
+// ============================================================
+// DATE HELPER
+// ============================================================
+function extractMonthYear(dateStr) {
+  const monthNames = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  if (!dateStr || dateStr === '—' || dateStr === '' || dateStr === '#N/A') return null;
+  // Format DD/MM/YYYY
+  const parts = dateStr.split('/');
+  if (parts.length >= 3) {
+    const month = parseInt(parts[1]);
+    const year = parts[2].length === 4 ? parts[2] : '20' + parts[2];
+    const yearInt = parseInt(year);
+    if (month >= 1 && month <= 12 && yearInt >= 2020 && yearInt <= 2027) {
+      return { month, year, sortKey: year + '-' + String(month).padStart(2,'0'), label: monthNames[month-1] + ' ' + year.substring(2) };
+    }
+  }
+  // Format "22-déc." or "13-avr."
+  const moisFr = {'janv':1,'févr':2,'mars':3,'avr':4,'mai':5,'juin':6,'juil':7,'août':8,'aou':8,'sept':9,'oct':10,'nov':11,'déc':12,'dec':12,'jan':1,'fev':2,'jul':7};
+  const m2 = dateStr.match(/(\d+)[\-\/]([a-zéûàô]+)\.?[\-\/]?(\d{2,4})?/i);
+  if (m2) {
+    const mStr = m2[2].toLowerCase().substring(0,4);
+    const month = moisFr[mStr] || moisFr[mStr.substring(0,3)];
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    let year;
+    if (m2[3]) {
+      year = m2[3].length === 2 ? '20' + m2[3] : m2[3];
+    } else {
+      year = month <= currentMonth ? String(currentYear) : String(currentYear - 1);
+    }
+    if (month) return { month, year, sortKey: year + '-' + String(month).padStart(2,'0'), label: monthNames[month-1] + ' ' + year.substring(2) };
+  }
+  return null;
+}
 
 // ============================================================
 // CROSS-FILTER STATE
