@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_22.html -->
+<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_24.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -294,7 +294,7 @@ let sDir = -1;
 async function loadWOC() {
   try {
     document.getElementById('syncLabel').textContent = 'Chargement des WOC…';
-    const url = 'https://docs.google.com/spreadsheets/d/' + WOC_SHEET_ID + '/gviz/tq?tqx=out:json&t=' + Date.now();
+    const url = 'https://docs.google.com/spreadsheets/d/' + WOC_SHEET_ID + '/gviz/tq?tqx=out:json&sheet=Tableau%20de%20bord&gid=533676283&t=' + Date.now();
     const res = await fetch(url);
     const text = await res.text();
     // Handle both /*O_o*/ and google.visualization.Query.setResponse() prefixes
@@ -390,7 +390,7 @@ async function loadWOC() {
 // ============================================================
 async function loadRapports() {
   try {
-    const url = 'https://docs.google.com/spreadsheets/d/' + RAP_SHEET_ID + '/gviz/tq?tqx=out:json&t=' + Date.now();
+    const url = 'https://docs.google.com/spreadsheets/d/' + RAP_SHEET_ID + '/gviz/tq?tqx=out:json&sheet=Tableau%20de%20bord&gid=533676283&t=' + Date.now();
     const res = await fetch(url);
     const text = await res.text();
     // Handle both /*O_o*/ and google.visualization.Query.setResponse() prefixes
