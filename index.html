@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_20.html -->
+<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_22.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -153,7 +153,11 @@ td{padding:9px 13px;vertical-align:middle}
 
   <!-- DASHBOARD -->
   <div class="dashboard">
-    <div class="dashboard-title">📊 Tableau de bord</div>
+    <div class="dashboard-title" style="display:flex;align-items:center;gap:12px">
+    📊 Tableau de bord
+    <span id="dashFilterInfo" style="font-size:11px;color:var(--accent);font-weight:500;text-transform:none;letter-spacing:0"></span>
+    <button id="dashResetBtn" onclick="resetDashFilters()" style="display:none;background:var(--accent-glow);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;color:var(--accent);font-size:11px;cursor:pointer;font-family:Inter,sans-serif">↺ Reset filtres</button>
+  </div>
 
     <div class="charts-grid">
       <div class="chart-card">
@@ -164,7 +168,7 @@ td{padding:9px 13px;vertical-align:middle}
         <div class="chart-title">Taux de complétion</div>
         <div class="taux-wrap">
           <div class="taux-val" id="tauxVal">—</div>
-          <div class="taux-lbl">des WOC sont terminés (OK)</div>
+          <div class="taux-lbl">des WOC sont terminés (OK)</div><div id="tauxTotal" style="font-size:11px;color:var(--text-muted);margin-top:4px"></div>
           <canvas id="chartTaux" style="max-height:80px;max-width:80px"></canvas>
         </div>
       </div>
@@ -227,7 +231,7 @@ td{padding:9px 13px;vertical-align:middle}
       <option value="non">⬜ Sans rapport</option>
     </select>
     <button class="filter-btn" onclick="resetFilters()">↺ Reset</button>
-    <div class="sync-status"><span class="sync-dot" id="syncDot" style="background: var(--nok);"></span><span id="syncLabel">Erreur chargement WOC</span></div>
+    <div class="sync-status"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">Chargement…</span></div>
     <span class="results-count" id="resultsCount"></span>
   </div>
 
@@ -650,124 +654,218 @@ Chart.defaults.color = '#7b8199';
 Chart.defaults.borderColor = '#2e3249';
 Chart.defaults.font.family = "'Inter', sans-serif";
 
+// ============================================================
+// CROSS-FILTER STATE
+// ============================================================
+let activeFilters = {
+  type: null,
+  statut: null,
+  equipe: null,
+  ville: null
+};
+
+function getFilteredData() {
+  return DATA.filter(r => {
+    if (activeFilters.type && r.Type !== activeFilters.type) return false;
+    if (activeFilters.statut && r.Statut !== activeFilters.statut) return false;
+    if (activeFilters.equipe && r.Team !== activeFilters.equipe) return false;
+    if (activeFilters.ville) {
+      const ville = r.Ville && r.Ville.toLowerCase().startsWith('paris') ? 'Paris' : r.Ville;
+      if (ville !== activeFilters.ville) return false;
+    }
+    return true;
+  });
+}
+
+function toggleFilter(key, value) {
+  if (activeFilters[key] === value) {
+    activeFilters[key] = null; // deselect
+  } else {
+    activeFilters[key] = value;
+  }
+  renderCharts();
+  // Also update main table
+  applyFilters();
+  // Show/hide reset button
+  const hasFilter = Object.values(activeFilters).some(v => v !== null);
+  document.getElementById('dashResetBtn').style.display = hasFilter ? 'inline-flex' : 'none';
+}
+
+function resetDashFilters() {
+  activeFilters = { type: null, statut: null, equipe: null, ville: null };
+  renderCharts();
+  applyFilters();
+  document.getElementById('dashResetBtn').style.display = 'none';
+}
+
 function renderCharts() {
+  const D = getFilteredData();
   if (!DATA || DATA.length === 0) return;
 
-  const ok = DATA.filter(r => r.Statut === 'OK').length;
-  const raf = DATA.filter(r => r.Statut === 'RAF').length;
-  const nok = DATA.filter(r => r.Statut === 'NOK').length;
-  const autres = DATA.filter(r => !['OK','RAF','NOK'].includes(r.Statut)).length;
+  const ok = D.filter(r => r.Statut === 'OK').length;
+  const raf = D.filter(r => r.Statut === 'RAF').length;
+  const nok = D.filter(r => r.Statut === 'NOK').length;
+  const autres = D.filter(r => !['OK','RAF','NOK'].includes(r.Statut)).length;
 
-  // 1. Statuts (donut)
+  // Active filter indicator
+  const hasFilter = Object.values(activeFilters).some(v => v !== null);
+  const filterInfo = Object.entries(activeFilters)
+    .filter(([k,v]) => v !== null)
+    .map(([k,v]) => v).join(' · ');
+
+  document.getElementById('dashFilterInfo').textContent = hasFilter ? '🔍 Filtré par : ' + filterInfo : '';
+
+  // 1. Statuts (donut) - clickable
   destroyChart('chartStatut');
-  charts['chartStatut'] = new Chart(document.getElementById('chartStatut'), {
+  const chartStatut = new Chart(document.getElementById('chartStatut'), {
     type: 'doughnut',
     data: {
       labels: ['OK', 'RAF', 'NOK', 'Autres'],
-      datasets: [{ data: [ok, raf, nok, autres], backgroundColor: ['#22c55e','#f59e0b','#ef4444','#7b8199'], borderWidth: 0, hoverOffset: 4 }]
+      datasets: [{ 
+        data: [ok, raf, nok, autres], 
+        backgroundColor: [
+          activeFilters.statut && activeFilters.statut !== 'OK' ? 'rgba(34,197,94,0.2)' : '#22c55e',
+          activeFilters.statut && activeFilters.statut !== 'RAF' ? 'rgba(245,158,11,0.2)' : '#f59e0b',
+          activeFilters.statut && activeFilters.statut !== 'NOK' ? 'rgba(239,68,68,0.2)' : '#ef4444',
+          '#7b8199'
+        ], 
+        borderWidth: activeFilters.statut ? 2 : 0,
+        borderColor: ['#22c55e','#f59e0b','#ef4444','#7b8199'],
+        hoverOffset: 6 
+      }]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 10, font: { size: 11 } } } } }
+    options: { 
+      responsive: true, maintainAspectRatio: false, 
+      plugins: { legend: { position: 'bottom', labels: { padding: 10, font: { size: 11 } } } },
+      onClick: (e, elements) => {
+        if (elements.length > 0) {
+          const label = ['OK','RAF','NOK','Autres'][elements[0].index];
+          if (label !== 'Autres') toggleFilter('statut', label);
+        }
+      },
+      onHover: (e) => { e.native.target.style.cursor = 'pointer'; }
+    }
   });
+  charts['chartStatut'] = chartStatut;
 
   // 2. Taux de complétion
-  const taux = Math.round((ok / DATA.length) * 100);
+  const taux = D.length > 0 ? Math.round((ok / D.length) * 100) : 0;
   document.getElementById('tauxVal').textContent = taux + '%';
   document.getElementById('tauxVal').style.color = taux >= 70 ? 'var(--ok)' : taux >= 40 ? 'var(--raf)' : 'var(--nok)';
+  document.getElementById('tauxTotal').textContent = D.length + ' WOC' + (hasFilter ? ' (filtrés)' : '');
 
-  // 3. Équipes (bar)
-  const acces = DATA.filter(r => r.Team === 'Accès').length;
-  const maintenance = DATA.filter(r => r.Team === 'Maintenance').length;
+  // 3. Équipes - clickable
+  const acces = D.filter(r => r.Team === 'Accès').length;
+  const maintenance = D.filter(r => r.Team === 'Maintenance').length;
   destroyChart('chartEquipe');
   charts['chartEquipe'] = new Chart(document.getElementById('chartEquipe'), {
     type: 'bar',
     data: {
       labels: ['Accès', 'Maintenance'],
-      datasets: [{ data: [acces, maintenance], backgroundColor: ['rgba(129,140,248,0.7)','rgba(52,211,153,0.7)'], borderRadius: 6, borderWidth: 0 }]
+      datasets: [{ 
+        data: [acces, maintenance], 
+        backgroundColor: [
+          activeFilters.equipe && activeFilters.equipe !== 'Accès' ? 'rgba(129,140,248,0.2)' : 'rgba(129,140,248,0.8)',
+          activeFilters.equipe && activeFilters.equipe !== 'Maintenance' ? 'rgba(52,211,153,0.2)' : 'rgba(52,211,153,0.8)'
+        ], 
+        borderRadius: 6, borderWidth: 0 
+      }]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#2e3249' } }, x: { grid: { display: false } } } }
+    options: { 
+      responsive: true, maintainAspectRatio: false, 
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw + ' WOC' } } }, 
+      scales: { y: { beginAtZero: true, grid: { color: '#2e3249' } }, x: { grid: { display: false } } },
+      onClick: (e, elements) => {
+        if (elements.length > 0) {
+          const label = ['Accès','Maintenance'][elements[0].index];
+          toggleFilter('equipe', label);
+        }
+      },
+      onHover: (e) => { e.native.target.style.cursor = 'pointer'; }
+    }
   });
 
-  // 4. Types de mission (bar horizontal)
+  // 4. Types de mission - clickable
   const typeCount = {};
   DATA.forEach(r => { if (r.Type) typeCount[r.Type] = (typeCount[r.Type] || 0) + 1; });
   const typesSorted = Object.entries(typeCount).sort((a,b) => b[1]-a[1]);
+  
+  const DbyType = {};
+  D.forEach(r => { if (r.Type) DbyType[r.Type] = (DbyType[r.Type] || 0) + 1; });
+
   destroyChart('chartType');
   charts['chartType'] = new Chart(document.getElementById('chartType'), {
     type: 'bar',
     data: {
       labels: typesSorted.map(t => t[0]),
-      datasets: [{ data: typesSorted.map(t => t[1]), backgroundColor: 'rgba(79,126,248,0.7)', borderRadius: 6, borderWidth: 0 }]
+      datasets: [{ 
+        data: typesSorted.map(t => DbyType[t[0]] || 0), 
+        backgroundColor: typesSorted.map(t => 
+          activeFilters.type && activeFilters.type !== t[0] ? 'rgba(79,126,248,0.2)' : 
+          activeFilters.type === t[0] ? '#4f7ef8' : 'rgba(79,126,248,0.7)'
+        ), 
+        borderRadius: 6, borderWidth: 0 
+      }]
     },
-    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: '#2e3249' } }, y: { grid: { display: false }, ticks: { font: { size: 10 } } } } }
+    options: { 
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false, 
+      plugins: { legend: { display: false } }, 
+      scales: { x: { beginAtZero: true, grid: { color: '#2e3249' } }, y: { grid: { display: false }, ticks: { font: { size: 10 } } } },
+      onClick: (e, elements) => {
+        if (elements.length > 0) {
+          const label = typesSorted[elements[0].index][0];
+          toggleFilter('type', label);
+        }
+      },
+      onHover: (e) => { e.native.target.style.cursor = 'pointer'; }
+    }
   });
 
   // 5. Évolution mensuelle
   const monthNames = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
   const monthCount = {};
-  
-  function extractMonthYear(dateStr) {
-    if (!dateStr || dateStr === '—' || dateStr === '' || dateStr === '#N/A') return null;
-    // Format DD/MM/YYYY
-    const parts = dateStr.split('/');
-    if (parts.length >= 3) {
-      const month = parseInt(parts[1]);
-      const year = parts[2].length === 4 ? parts[2] : '20' + parts[2];
-      const yearInt = parseInt(year);
-      // Sanity check: year must be between 2020 and 2026
-      if (month >= 1 && month <= 12 && yearInt >= 2020 && yearInt <= 2026) {
-        return { month, year, sortKey: year + '-' + String(month).padStart(2,'0'), label: monthNames[month-1] + ' ' + year.substring(2) };
-      }
+  D.forEach(r => {
+    const d = r['Date de création'];
+    if (!d || d === '—' || d === '') return;
+    const info = extractMonthYear(d);
+    if (info) {
+      monthCount[info.sortKey] = monthCount[info.sortKey] || { label: info.label, count: 0 };
+      monthCount[info.sortKey].count++;
     }
-    // Format "22-déc." or "13-avr." (Google Sheets short format)
-    const moisFr = {'janv':1,'févr':2,'mars':3,'avr':4,'mai':5,'juin':6,'juil':7,'août':8,'sept':9,'oct':10,'nov':11,'déc':12,'dec':12,'jan':1,'fev':2,'jul':7,'aout':8,'avr':4,'aou':8};
-    const m2 = dateStr.match(/(\d+)[\-\/]([a-zéûàô]+)\.?[\-\/]?(\d{2,4})?/i);
-    if (m2) {
-      const mStr = m2[2].toLowerCase().substring(0,4);
-      const month = moisFr[mStr] || moisFr[mStr.substring(0,3)];
-      // If no year in string, determine from context (assume 2025 for past dates)
-      // Determine year: if month > current month, it's previous year
-      const now = new Date();
-      const currentMonth = now.getMonth() + 1;
-      const currentYear = now.getFullYear();
-      let year;
-      if (m2[3]) {
-        year = m2[3].length === 2 ? '20' + m2[3] : m2[3];
-      } else {
-        // No year in string - use current or previous year based on month
-        year = month <= currentMonth ? String(currentYear) : String(currentYear - 1);
-      }
-      if (month) return { month, year, sortKey: year + '-' + String(month).padStart(2,'0'), label: monthNames[month-1] + ' ' + year.substring(2) };
-    }
-    return null;
-  }
-
-  DATA.forEach(r => {
-    const info = extractMonthYear(r['Date de création']);
-    if (!info) return;
-    monthCount[info.sortKey] = monthCount[info.sortKey] || { label: info.label, count: 0 };
-    monthCount[info.sortKey].count++;
   });
-  const monthsSortedRaw = Object.entries(monthCount).sort((a,b) => a[0].localeCompare(b[0])).slice(-12);
-  const monthsSorted = monthsSortedRaw.map(([k,v]) => [v.label, v.count]);
+  const monthsSorted = Object.entries(monthCount).sort((a,b) => a[0].localeCompare(b[0])).slice(-12);
+
   destroyChart('chartMensuel');
   charts['chartMensuel'] = new Chart(document.getElementById('chartMensuel'), {
     type: 'line',
     data: {
-      labels: monthsSorted.map(m => m[0]),
-      datasets: [{ data: monthsSorted.map(m => m[1]), borderColor: '#4f7ef8', backgroundColor: 'rgba(79,126,248,0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#4f7ef8', pointRadius: 4, borderWidth: 2 }]
+      labels: monthsSorted.map(m => m[1].label),
+      datasets: [{ 
+        data: monthsSorted.map(m => m[1].count), 
+        borderColor: '#4f7ef8', backgroundColor: 'rgba(79,126,248,0.1)', 
+        fill: true, tension: 0.4, pointBackgroundColor: '#4f7ef8', pointRadius: 4, borderWidth: 2 
+      }]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#2e3249' } }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } }
+    options: { 
+      responsive: true, maintainAspectRatio: false, 
+      plugins: { legend: { display: false } }, 
+      scales: { y: { beginAtZero: true, grid: { color: '#2e3249' } }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } 
+    }
   });
 
   // 6. Montant par mois
   const monthMontant = {};
-  DATA.forEach(r => {
-    const info = extractMonthYear(r['Date de création']);
-    if (!info) return;
-    monthMontant[info.sortKey] = monthMontant[info.sortKey] || { label: info.label, total: 0 };
-    monthMontant[info.sortKey].total += (parseFloat(r.Montant) || 0);
+  D.forEach(r => {
+    const d = r['Date de création'];
+    if (!d || d === '—' || d === '') return;
+    const info2 = extractMonthYear(d);
+    if (info2) {
+      monthMontant[info2.sortKey] = monthMontant[info2.sortKey] || { label: info2.label, total: 0 };
+      monthMontant[info2.sortKey].total += (parseFloat(r.Montant) || 0);
+    }
   });
   const montantSorted = Object.entries(monthMontant).sort((a,b) => a[0].localeCompare(b[0])).slice(-12).map(([k,v]) => [v.label, v.total]);
+
   destroyChart('chartMontant');
   charts['chartMontant'] = new Chart(document.getElementById('chartMontant'), {
     type: 'bar',
@@ -775,14 +873,20 @@ function renderCharts() {
       labels: montantSorted.map(m => m[0]),
       datasets: [{ data: montantSorted.map(m => Math.round(m[1])), backgroundColor: 'rgba(52,211,153,0.7)', borderRadius: 6, borderWidth: 0 }]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#2e3249' }, ticks: { callback: v => v.toLocaleString('fr-FR') + '€' } }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } }
+    options: { 
+      responsive: true, maintainAspectRatio: false, 
+      plugins: { legend: { display: false } }, 
+      scales: { 
+        y: { beginAtZero: true, grid: { color: '#2e3249' }, ticks: { callback: v => v.toLocaleString('fr-FR') + '€' } }, 
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } } 
+      } 
+    }
   });
 
-  // 7. Top 10 villes
+  // 7. Top 10 villes - clickable
   const villeCount = {};
-  DATA.forEach(r => { 
+  D.forEach(r => { 
     if (r.Ville && r.Ville !== '—' && r.Ville !== '#N/A' && r.Ville.trim() !== '') {
-      // Regroup all Paris arrondissements under "Paris"
       let ville = r.Ville.trim();
       if (ville.toLowerCase().startsWith('paris')) ville = 'Paris';
       villeCount[ville] = (villeCount[ville] || 0) + 1;
@@ -791,12 +895,15 @@ function renderCharts() {
   const top10 = Object.entries(villeCount).sort((a,b) => b[1]-a[1]).slice(0,10);
   const maxV = top10[0] ? top10[0][1] : 1;
   document.getElementById('topVilles').innerHTML = top10.map(([ville, count]) =>
-    '<li><span class="city">' + ville + '</span><div class="bar-wrap"><div class="bar-fill" style="width:' + Math.round((count/maxV)*100) + '%"></div></div><span class="count">' + count + '</span></li>'
+    '<li onclick="toggleFilter('ville', '' + ville.replace(/'/g,"\'") + '')" style="cursor:pointer;opacity:' + (activeFilters.ville && activeFilters.ville !== ville ? '0.3' : '1') + ';transition:opacity .2s">' +
+    '<span class="city">' + (activeFilters.ville === ville ? '✓ ' : '') + ville + '</span>' +
+    '<div class="bar-wrap"><div class="bar-fill" style="width:' + Math.round((count/maxV)*100) + '%;background:' + (activeFilters.ville === ville ? 'var(--ok)' : 'var(--accent)') + '"></div></div>' +
+    '<span class="count">' + count + '</span></li>'
   ).join('');
 
-  // 8. Montant par type de mission
+  // 8. Montant par type de mission - clickable
   const typesMontant = {};
-  DATA.forEach(r => {
+  D.forEach(r => {
     const t = r.Type || 'Néant';
     typesMontant[t] = (typesMontant[t] || 0) + (parseFloat(r.Montant) || 0);
   });
@@ -806,9 +913,30 @@ function renderCharts() {
     type: 'bar',
     data: {
       labels: typesMontantSorted.map(t => t[0]),
-      datasets: [{ data: typesMontantSorted.map(t => Math.round(t[1])), backgroundColor: 'rgba(79,126,248,0.7)', borderRadius: 6, borderWidth: 0 }]
+      datasets: [{ 
+        data: typesMontantSorted.map(t => Math.round(t[1])), 
+        backgroundColor: typesMontantSorted.map(t =>
+          activeFilters.type && activeFilters.type !== t[0] ? 'rgba(79,126,248,0.2)' :
+          activeFilters.type === t[0] ? '#4f7ef8' : 'rgba(79,126,248,0.7)'
+        ),
+        borderRadius: 6, borderWidth: 0 
+      }]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#2e3249' }, ticks: { callback: v => v.toLocaleString('fr-FR') + '€' } }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } }
+    options: { 
+      responsive: true, maintainAspectRatio: false, 
+      plugins: { legend: { display: false } }, 
+      scales: { 
+        y: { beginAtZero: true, grid: { color: '#2e3249' }, ticks: { callback: v => v.toLocaleString('fr-FR') + '€' } }, 
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } } 
+      },
+      onClick: (e, elements) => {
+        if (elements.length > 0) {
+          const label = typesMontantSorted[elements[0].index][0];
+          toggleFilter('type', label);
+        }
+      },
+      onHover: (e) => { e.native.target.style.cursor = 'pointer'; }
+    }
   });
 }
 
