@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_29.html -->
+<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_30.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -711,17 +711,25 @@ let activeFilters = {
   type: null,
   statut: null,
   equipe: null,
-  ville: null
+  ville: null,
+  sla: null
 };
 
 function getFilteredData() {
   return DATA.filter(r => {
-    if (activeFilters.type && r.Type !== activeFilters.type) return false;
+    if (activeFilters.type) {
+      const t = (r.Type && r.Type !== 'Néant') ? r.Type : 'Accès';
+      if (t !== activeFilters.type) return false;
+    }
     if (activeFilters.statut && r.Statut !== activeFilters.statut) return false;
     if (activeFilters.equipe && r.Team !== activeFilters.equipe) return false;
     if (activeFilters.ville) {
       const ville = r.Ville && r.Ville.toLowerCase().startsWith('paris') ? 'Paris' : r.Ville;
       if (ville !== activeFilters.ville) return false;
+    }
+    if (activeFilters.sla) {
+      const cat = getSLACategory(r['Date de création'], r['Date réalisation']);
+      if (cat !== activeFilters.sla) return false;
     }
     return true;
   });
@@ -1018,7 +1026,7 @@ function renderCharts() {
   document.getElementById('slaFilterInfo').textContent = totalSLA > 0 
     ? totalSLA + ' WOC analysés (statut OK uniquement)' : '';
 
-  // SLA donut chart
+  // SLA donut chart - clickable
   destroyChart('chartSLA');
   charts['chartSLA'] = new Chart(document.getElementById('chartSLA'), {
     type: 'doughnut',
@@ -1026,8 +1034,12 @@ function renderCharts() {
       labels: slaCategories.map((c,i) => c + ' (' + slaCounts[c] + ')'),
       datasets: [{ 
         data: slaCategories.map(c => slaCounts[c]), 
-        backgroundColor: slaColors,
-        borderWidth: 0, hoverOffset: 6
+        backgroundColor: slaCategories.map((c,i) => 
+          activeFilters.sla && activeFilters.sla !== c ? slaColors[i].replace('0.8','0.2') : slaColors[i]
+        ),
+        borderWidth: activeFilters.sla ? 2 : 0,
+        borderColor: slaColors,
+        hoverOffset: 6
       }]
     },
     options: { 
@@ -1035,19 +1047,42 @@ function renderCharts() {
       plugins: { 
         legend: { position: 'bottom', labels: { padding: 10, font: { size: 11 } } },
         tooltip: { callbacks: { label: ctx => ctx.label + ' — ' + (totalSLA > 0 ? Math.round(ctx.raw/totalSLA*100) : 0) + '%' } }
-      }
+      },
+      onClick: (e, elements) => {
+        if (elements.length > 0) {
+          const cat = slaCategories[elements[0].index];
+          toggleFilter('sla', cat);
+        }
+      },
+      onHover: (e) => { e.native.target.style.cursor = 'pointer'; }
     }
   });
 
-  // SLA by team bar chart
+  // SLA by team bar chart - clickable
   destroyChart('chartSLAEquipe');
   charts['chartSLAEquipe'] = new Chart(document.getElementById('chartSLAEquipe'), {
     type: 'bar',
     data: {
       labels: slaCategories,
       datasets: [
-        { label: '🔑 Accès', data: slaCategories.map(c => slaAcces[c]), backgroundColor: 'rgba(129,140,248,0.8)', borderRadius: 4, borderWidth: 0 },
-        { label: '🔧 Maintenance', data: slaCategories.map(c => slaMaint[c]), backgroundColor: 'rgba(52,211,153,0.8)', borderRadius: 4, borderWidth: 0 }
+        { 
+          label: '🔑 Accès', 
+          data: slaCategories.map(c => slaAcces[c]), 
+          backgroundColor: slaCategories.map(c => 
+            activeFilters.sla && activeFilters.sla !== c ? 'rgba(129,140,248,0.2)' : 
+            activeFilters.sla === c ? 'rgba(129,140,248,1)' : 'rgba(129,140,248,0.8)'
+          ),
+          borderRadius: 4, borderWidth: 0 
+        },
+        { 
+          label: '🔧 Maintenance', 
+          data: slaCategories.map(c => slaMaint[c]), 
+          backgroundColor: slaCategories.map(c => 
+            activeFilters.sla && activeFilters.sla !== c ? 'rgba(52,211,153,0.2)' : 
+            activeFilters.sla === c ? 'rgba(52,211,153,1)' : 'rgba(52,211,153,0.8)'
+          ),
+          borderRadius: 4, borderWidth: 0 
+        }
       ]
     },
     options: { 
@@ -1056,7 +1091,14 @@ function renderCharts() {
       scales: { 
         y: { beginAtZero: true, grid: { color: '#2e3249' }, stacked: false }, 
         x: { grid: { display: false }, ticks: { font: { size: 10 } } } 
-      }
+      },
+      onClick: (e, elements) => {
+        if (elements.length > 0) {
+          const cat = slaCategories[elements[0].dataIndex];
+          toggleFilter('sla', cat);
+        }
+      },
+      onHover: (e) => { e.native.target.style.cursor = 'pointer'; }
     }
   });
 }
