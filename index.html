@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_25.html -->
+<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_26.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -231,7 +231,7 @@ td{padding:9px 13px;vertical-align:middle}
       <option value="non">⬜ Sans rapport</option>
     </select>
     <button class="filter-btn" onclick="resetFilters()">↺ Reset</button>
-    <div class="sync-status"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">Chargement…</span></div>
+    <div class="sync-status"><span class="sync-dot" id="syncDot" style="background: var(--nok);"></span><span id="syncLabel">Erreur chargement WOC</span></div>
     <span class="results-count" id="resultsCount"></span>
   </div>
 
@@ -894,12 +894,18 @@ function renderCharts() {
   });
   const top10 = Object.entries(villeCount).sort((a,b) => b[1]-a[1]).slice(0,10);
   const maxV = top10[0] ? top10[0][1] : 1;
-  document.getElementById('topVilles').innerHTML = top10.map(([ville, count]) =>
-    '<li onclick="toggleFilter('ville', '' + ville.replace(/'/g,"\'") + '')" style="cursor:pointer;opacity:' + (activeFilters.ville && activeFilters.ville !== ville ? '0.3' : '1') + ';transition:opacity .2s">' +
-    '<span class="city">' + (activeFilters.ville === ville ? '✓ ' : '') + ville + '</span>' +
-    '<div class="bar-wrap"><div class="bar-fill" style="width:' + Math.round((count/maxV)*100) + '%;background:' + (activeFilters.ville === ville ? 'var(--ok)' : 'var(--accent)') + '"></div></div>' +
-    '<span class="count">' + count + '</span></li>'
-  ).join('');
+  const topVillesEl = document.getElementById('topVilles');
+  topVillesEl.innerHTML = '';
+  top10.forEach(([ville, count]) => {
+    const li = document.createElement('li');
+    li.style.cssText = 'cursor:pointer;opacity:' + (activeFilters.ville && activeFilters.ville !== ville ? '0.3' : '1') + ';transition:opacity .2s';
+    li.onclick = () => toggleFilter('ville', ville);
+    const isActive = activeFilters.ville === ville;
+    li.innerHTML = '<span class="city">' + (isActive ? '✓ ' : '') + ville + '</span>' +
+      '<div class="bar-wrap"><div class="bar-fill" style="width:' + Math.round((count/maxV)*100) + '%;background:' + (isActive ? 'var(--ok)' : 'var(--accent)') + '"></div></div>' +
+      '<span class="count">' + count + '</span>';
+    topVillesEl.appendChild(li);
+  });
 
   // 8. Montant par type de mission - clickable
   const typesMontant = {};
