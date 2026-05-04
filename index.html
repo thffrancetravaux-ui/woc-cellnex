@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_31.html -->
+<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_32.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -486,6 +486,12 @@ function applyFilters(){
     if(ty&&r.Type!==ty)return false;
     if(rap==='oui'&&!RAPPORTS[r['Code FR']])return false;
     if(rap==='non'&&RAPPORTS[r['Code FR']])return false;
+    // Dashboard cross-filters
+    if(activeFilters.statut&&r.Statut!==activeFilters.statut)return false;
+    if(activeFilters.equipe&&r.Team!==activeFilters.equipe)return false;
+    if(activeFilters.type){const t2=(r.Type&&r.Type!=='Néant')?r.Type:'Accès';if(t2!==activeFilters.type)return false;}
+    if(activeFilters.ville){const v=r.Ville&&r.Ville.toLowerCase().startsWith('paris')?'Paris':r.Ville;if(v!==activeFilters.ville)return false;}
+    if(activeFilters.sla){const cat=getSLACategory(r['Date de création'],r['Date réalisation']);if(cat!==activeFilters.sla)return false;}
     if(q){
       const h=[r.WOC,r['Code FR'],r['Nom du site'],r.Ville,r.Intervention,r.Adresse].join(' ').toLowerCase();
       if(!h.includes(q))return false;
