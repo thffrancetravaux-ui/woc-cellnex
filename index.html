@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_32.html -->
+<!-- saved from url=(0061)file:///C:/Users/y.hamouda/Downloads/WOC_CELLNEX_2026_33.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -132,6 +132,26 @@ td{padding:9px 13px;vertical-align:middle}
 .top-list .bar-wrap{flex:1;margin:0 8px;background:var(--surface2);border-radius:3px;height:5px;overflow:hidden}
 .top-list .bar-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s}
 .top-list .count{color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;min-width:24px;text-align:right}
+
+/* MAP */
+.map-section { margin-bottom: 20px; }
+.map-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.map-header { padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+.map-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; }
+.map-stats { display: flex; gap: 16px; font-size: 11px; }
+.map-stat { display: flex; align-items: center; gap: 5px; }
+.map-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+#mapContainer { height: 500px; width: 100%; }
+.leaflet-popup-content-wrapper { background: var(--surface) !important; color: var(--text) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important; }
+.leaflet-popup-tip { background: var(--surface) !important; }
+.popup-woc { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4f7ef8; font-weight: 600; margin-bottom: 4px; }
+.popup-site { font-size: 13px; font-weight: 600; color: #e8eaf0; margin-bottom: 6px; }
+.popup-row { font-size: 11px; color: #7b8199; margin-bottom: 2px; display: flex; gap: 6px; }
+.popup-row span { color: #e8eaf0; }
+.popup-badge { display: inline-block; padding: 2px 7px; border-radius: 99px; font-size: 10px; font-weight: 600; }
+.badge-ok-p { background: rgba(34,197,94,.15); color: #22c55e; }
+.badge-raf-p { background: rgba(245,158,11,.15); color: #f59e0b; }
+.badge-nok-p { background: rgba(239,68,68,.15); color: #ef4444; }
 </style>
 </head>
 <body>
@@ -216,6 +236,26 @@ td{padding:9px 13px;vertical-align:middle}
         <div class="chart-title">Détail SLA par équipe</div>
         <div class="chart-wrap"><canvas id="chartSLAEquipe"></canvas></div>
       </div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map-section">
+    <div class="dashboard-title">🗺️ Carte des sites
+      <span id="mapInfo" style="font-size:11px;color:var(--accent);font-weight:500;text-transform:none;letter-spacing:0;margin-left:8px"></span>
+      <button onclick="resetMapView()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--text-muted);font-size:11px;cursor:pointer;font-family:Inter,sans-serif;margin-left:8px">🎯 Recentrer</button>
+    </div>
+    <div class="map-card">
+      <div class="map-header">
+        <div class="map-stats">
+          <div class="map-stat"><div class="map-dot" style="background:#22c55e"></div> OK</div>
+          <div class="map-stat"><div class="map-dot" style="background:#f59e0b"></div> RAF</div>
+          <div class="map-stat"><div class="map-dot" style="background:#ef4444"></div> NOK</div>
+          <div class="map-stat"><div class="map-dot" style="background:#4f7ef8"></div> Sans coordonnées</div>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted)">Cliquez sur un point pour voir les détails · La carte suit les filtres actifs</div>
+      </div>
+      <div id="mapContainer"></div>
     </div>
   </div>
 
@@ -505,6 +545,7 @@ function applyFilters(){
   });
   page=1;
   render();
+  updateMap();
 }
 
 function sortBy(k){
@@ -643,11 +684,96 @@ document.getElementById('filterType').addEventListener('change',applyFilters);
 document.getElementById('filterRapport').addEventListener('change',applyFilters);
 
 // ============================================================
+// MAP
+// ============================================================
+let map = null;
+let markersLayer = null;
+
+function initMap() {
+  if (map) return;
+  map = L.map('mapContainer', {
+    center: [46.5, 2.5],
+    zoom: 6,
+    zoomControl: true,
+    attributionControl: false
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19
+  }).addTo(map);
+
+  markersLayer = L.layerGroup().addTo(map);
+}
+
+function getMarkerColor(statut) {
+  if (statut === 'OK') return '#22c55e';
+  if (statut === 'RAF') return '#f59e0b';
+  if (statut === 'NOK') return '#ef4444';
+  return '#4f7ef8';
+}
+
+function createMarkerIcon(color) {
+  return L.divIcon({
+    className: '',
+    html: '<div style="width:10px;height:10px;border-radius:50%;background:' + color + ';border:2px solid rgba(255,255,255,0.4);box-shadow:0 0 6px ' + color + '66"></div>',
+    iconSize: [10, 10],
+    iconAnchor: [5, 5]
+  });
+}
+
+function updateMap() {
+  if (!map || !markersLayer) return;
+  markersLayer.clearLayers();
+
+  const dataToShow = filtered.length > 0 ? filtered : DATA;
+  let count = 0;
+  let noCoords = 0;
+
+  dataToShow.forEach(r => {
+    const lat = parseFloat(r.Y);
+    const lng = parseFloat(r.X);
+    
+    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+      noCoords++;
+      return;
+    }
+
+    count++;
+    const color = getMarkerColor(r.Statut);
+    const marker = L.marker([lat, lng], { icon: createMarkerIcon(color) });
+    
+    const badgeClass = r.Statut === 'OK' ? 'badge-ok-p' : r.Statut === 'RAF' ? 'badge-raf-p' : 'badge-nok-p';
+    const montant = r.Montant ? parseFloat(r.Montant).toLocaleString('fr-FR', {minimumFractionDigits:0, maximumFractionDigits:2}) + ' €' : '—';
+    
+    marker.bindPopup('<div style="min-width:200px">' +
+      '<div class="popup-woc">' + (r.WOC || '—') + '</div>' +
+      '<div class="popup-site">' + (r['Nom du site'] || r.Ville || '—') + '</div>' +
+      '<div class="popup-row">Statut : <span><span class="popup-badge ' + badgeClass + '">' + (r.Statut || '—') + '</span></span></div>' +
+      '<div class="popup-row">Équipe : <span>' + (r.Team || '—') + '</span></div>' +
+      '<div class="popup-row">Ville : <span>' + (r.Ville || '—') + '</span></div>' +
+      '<div class="popup-row">Code FR : <span>' + (r['Code FR'] || '—') + '</span></div>' +
+      '<div class="popup-row">Montant : <span>' + montant + '</span></div>' +
+      '<div class="popup-row">Réalisation : <span>' + (r['Date réalisation'] || '—') + '</span></div>' +
+      '</div>', { maxWidth: 280 });
+
+    markersLayer.addLayer(marker);
+  });
+
+  document.getElementById('mapInfo').textContent = count + ' sites affichés' + (noCoords > 0 ? ' · ' + noCoords + ' sans coordonnées' : '');
+}
+
+function resetMapView() {
+  if (map) map.setView([46.5, 2.5], 6);
+}
+
+// ============================================================
 // INIT — charge WOC puis rapports puis charts
 // ============================================================
 async function init() {
   await loadWOC();
   renderCharts();
+  initMap();
+  updateMap();
   await loadRapports();
 }
 
@@ -657,6 +783,7 @@ init();
 setInterval(async () => {
   await loadWOC();
   renderCharts();
+  updateMap();
   await loadRapports();
 }, 5 * 60 * 1000);
 
